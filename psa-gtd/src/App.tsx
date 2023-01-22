@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Datastore from 'nedb-promises';
+import { Button, Card, Col } from 'antd';
+import { DeleteOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
 
 type Test = {
   _id: string
@@ -35,16 +37,34 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <button onClick={() => datastore.insert<Omit<Test, '_id'>>({ title: 'New Test' })}>Add</button>
+      <Button
+        icon={<PlusOutlined />}
+        onClick={() => datastore.insert<Omit<Test, '_id'>>({ title: 'New Test' })}
+      >
+        Add
+      </Button>
+      <Col span={8}>
         {docs.map((doc) => (
-          <div key={doc._id} style={{ display: 'flex' }}>
-            <button onClick={() => datastore.removeOne({ _id: doc._id }, {})}>Delete</button>
-            <button onClick={() => datastore.updateOne({ _id: doc._id }, { title: doc.title === 'New Test' ? 'Modified Test' : 'New Test' })}>Update</button>
-            <div>{JSON.stringify(doc, null, 2)}</div>
-          </div>
+          <Card
+            key={doc._id}
+            title={doc.title}
+            extra={(
+              <>
+                <Button
+                  icon={<UploadOutlined />}
+                  onClick={() => datastore.updateOne({ _id: doc._id }, { title: doc.title === 'New Test' ? 'Modified Test' : 'New Test' })}
+                />
+                <Button
+                  icon={<DeleteOutlined />}
+                  onClick={() => datastore.removeOne({ _id: doc._id }, {})}
+                />
+              </>
+            )}
+          >
+            <pre>{JSON.stringify(doc, null, 2)}</pre>
+          </Card>
         ))}
-      </header>
+      </Col>
     </div>
   );
 }

@@ -23,3 +23,7 @@ Documentation about nedb-promises can be found here:
 
 - [npm](https://www.npmjs.com/package/nedb-promises)
 - [docs](https://github.com/bajankristof/nedb-promises/master/docs.md)
+
+# stack set up
+
+    npm install antd @ant-design/icons xstate @xstate/react
