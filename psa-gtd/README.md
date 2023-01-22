@@ -1,8 +1,14 @@
+# Usage
+
+    npm install
+
+Change titles as desired
+
 # Set up
 
     npx create-react-app psa-gtd --template typescript
 
-# Nedb set up
+# nedb-promises set up
 
     npm i nedb-promises
 
