@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import logo from './logo.svg';
 import './App.css';
-
 import Datastore from 'nedb-promises';
+import { trace } from './utils';
 
 type Test = {
   _id: string
@@ -16,7 +15,7 @@ function App() {
 
   useEffect(() => {
     datastore.find<Test>({})
-    .then((docs) => setDocs(docs))
+    .then((docs) => setDocs(trace(docs)))
   }, []);
 
   return (
