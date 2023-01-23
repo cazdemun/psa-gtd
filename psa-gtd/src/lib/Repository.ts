@@ -1,13 +1,23 @@
+// v3.0
 import Datastore from 'nedb-promises';
 
-type OptionalId<T> = Omit<T, '_id'> & { _id?: string }
-type PartialWithId<T> = { _id: string } & Partial<T>
+export type BaseDoc = { _id: string }
 
-export default class Repository<T> {
+export type OptionalProperty<T, U extends keyof T> = Omit<T, U> & { [P in U]?: T[U] }
+export type RequiredPropertyInPartial<T, U extends keyof T> = Partial<Omit<T, U>> & { [P in U]: T[U] }
+
+export type OptionalId<T extends BaseDoc> = OptionalProperty<T, '_id'>
+
+export type PartialWithId<T extends BaseDoc> = RequiredPropertyInPartial<T, '_id'>
+
+export default class Repository<T extends BaseDoc> {
   db: Datastore<T>;
+
+  collection: string;
 
   constructor(collection: string) {
     this.db = Datastore.create({ filename: collection, autoload: true });
+    this.collection = collection;
   }
 
   find(query?: Record<string, string>): Promise<T[]> {
@@ -26,7 +36,7 @@ export default class Repository<T> {
   updateMany(docs: PartialWithId<T>[]): Promise<number> {
     if (docs.length === 0) return Promise.resolve(0);
     return new Promise((resolve, reject) => {
-      Promise.all(docs.map((doc) => this.update(doc._id, doc)))
+      Promise.all(docs.map(({ _id, ...doc }) => this.update(_id, doc as Partial<T>)))
         .then((nums: number[]) => nums.reduce((acc, x) => acc + x, 0))
         .then(resolve)
         .catch((err) => reject(new Error(`Updating documents with _ids: ${JSON.stringify(docs.map((d) => (d as any)._id))} - ${err.message}`)));

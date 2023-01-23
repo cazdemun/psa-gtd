@@ -1,45 +1,21 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button, Card, Col } from 'antd';
 import { DeleteOutlined, UploadOutlined, PlusOutlined } from '@ant-design/icons';
-import Repository from './lib/Repository';
-
-type Test = {
-  _id: string
-  title: string
-}
-
-const datastore = new Repository<Test>('test');
+import { useInterpret, useSelector } from '@xstate/react';
+import GlobalServicesMachine from './lib/GlobalServicesMachine';
 
 function App() {
-  const [docs, setDocs] = useState<Test[]>([])
+  const GlobalServices = useInterpret(GlobalServicesMachine);
+  
+  const TestCRUDService = useSelector(GlobalServices, ({ context }) => context.testCRUDActor);
 
-  useEffect(() => {
-    datastore.db.on('insert', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
-    })
-
-    datastore.db.on('remove', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
-    })
-
-    datastore.db.on('update', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
-    })
-
-    datastore.db.find({}).then((docs) => setDocs(docs))
-
-    return () => {
-      datastore.db.removeAllListeners('insert');
-      datastore.db.removeAllListeners('update');
-      datastore.db.removeAllListeners('remove');
-    }
-  }, []);
+  const docs = useSelector(TestCRUDService, ({ context }) => context.docs);
 
   return (
     <div className="App">
       <Button
         icon={<PlusOutlined />}
-        onClick={() => datastore.insert({ title: 'New Test' })}
+        onClick={() => TestCRUDService.send({ type: 'CREATE', doc: { title: 'New Test' } })}
       >
         Add
       </Button>
@@ -52,11 +28,11 @@ function App() {
               <>
                 <Button
                   icon={<UploadOutlined />}
-                  onClick={() => datastore.update(doc._id, { title: doc.title === 'New Test' ? 'Modified Test' : 'New Test' })}
+                  onClick={() => TestCRUDService.send({ type: 'UPDATE', _id: doc._id, doc: { title: doc.title === 'New Test' ? 'Modified Test' : 'New Test' } })}
                 />
                 <Button
                   icon={<DeleteOutlined />}
-                  onClick={() => datastore.delete(doc._id)}
+                  onClick={() => TestCRUDService.send({ type: 'DELETE', _id: doc._id })}
                 />
               </>
             )}
