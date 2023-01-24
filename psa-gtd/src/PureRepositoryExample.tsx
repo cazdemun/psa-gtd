@@ -16,15 +16,15 @@ function App() {
 
   useEffect(() => {
     datastore.db.on('insert', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
+      datastore.read({}).then((docs) => setDocs(docs))
     })
 
     datastore.db.on('remove', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
+      datastore.read({}).then((docs) => setDocs(docs))
     })
 
     datastore.db.on('update', () => {
-      datastore.find({}).then((docs) => setDocs(docs))
+      datastore.read({}).then((docs) => setDocs(docs))
     })
 
     datastore.db.find({}).then((docs) => setDocs(docs))
@@ -40,7 +40,7 @@ function App() {
     <div className="App">
       <Button
         icon={<PlusOutlined />}
-        onClick={() => datastore.insert({ title: 'New Test' })}
+        onClick={() => datastore.create({ title: 'New Test' })}
       >
         Add
       </Button>

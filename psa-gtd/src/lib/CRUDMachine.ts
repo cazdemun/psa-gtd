@@ -3,27 +3,27 @@
 /* eslint-disable max-len */
 import { createMachine, assign, sendParent } from 'xstate';
 // import RemoteRepository from './RemoteRepository';
-import Repository, { BaseDoc } from './Repository';
+import Repository, { OptionalId, BaseDoc } from './Repository';
 
-const docsToDocsMap = <T extends { _id: string }>(docs: T[]): Map<string, T> => new Map(docs
+const docsToDocsMap = <T extends BaseDoc>(docs: T[]): Map<string, T> => new Map(docs
   .filter((x) => !!x._id || x._id !== '')
   .map((x) => [x._id as string, x]));
 
 // https://stackoverflow.com/questions/28010444/react-efficient-updating-of-array-state
-export type CRUDContext<T> = {
+export type CRUDContext<T extends BaseDoc> = {
   docs: T[]
   docsMap: Map<string, T>
   selectedDoc?: T | undefined
 };
 
-type BasicCRUDEvent<T> =
-  | { type: 'CREATE'; doc: Omit<T, '_id'> | (Omit<T, '_id'>[]); }
+type BasicCRUDEvent<T extends BaseDoc> =
+  | { type: 'CREATE'; doc: OptionalId<T> | (OptionalId<T>[]); }
   | { type: 'UPDATE'; _id: string | undefined; doc: Partial<T>; }
   | { type: 'DELETE'; _id: string | undefined; }
 
-type BatchCRUDEvent<T> = { type: 'BATCH'; data: BasicCRUDEvent<T>[]; }
+type BatchCRUDEvent<T extends BaseDoc> = { type: 'BATCH'; data: BasicCRUDEvent<T>[]; }
 
-export type CRUDEvent<T> =
+export type CRUDEvent<T extends BaseDoc> =
   | BasicCRUDEvent<T>
   | BatchCRUDEvent<T>
 
@@ -177,10 +177,10 @@ const _createCRUDMachine = <T extends BaseDoc>(repo: Repo<T>) =>
     },
     services: {
       createDoc: (_, event: CRUDEvent<T>) => {
-        if (event.type === 'CREATE') return repo.insert(event.doc);
+        if (event.type === 'CREATE') return repo.create(event.doc);
         return Promise.resolve([]);
       },
-      readDocs: () => repo.find({}),
+      readDocs: () => repo.read(),
       updateDoc: (_, event: CRUDEvent<T>) => {
         if (event.type === 'UPDATE') return repo.update(event._id ?? '', event.doc);
         return Promise.resolve(0);

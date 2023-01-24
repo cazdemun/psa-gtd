@@ -1,9 +1,8 @@
-/* eslint-disable quotes */
-/* eslint-disable max-len */
 import {
   createMachine, assign, ActorRefFrom, spawn
 } from 'xstate';
 import createCRUDMachine from './CRUDMachine';
+import { BucketItem } from '../models';
 
 type Test = {
   _id: string
@@ -11,9 +10,13 @@ type Test = {
 }
 
 const TestCRUDMachine = createCRUDMachine<Test>('test', 'local');
+export type TestCRUDStateMachine = typeof TestCRUDMachine;
+const BucketCRUDMachine = createCRUDMachine<BucketItem>('bucket', 'local');
+export type BucketCRUDStateMachine = typeof BucketCRUDMachine;
 
 export type GlobalServicesContext = {
   testCRUDActor: ActorRefFrom<typeof TestCRUDMachine>
+  bucketCRUDActor: ActorRefFrom<typeof BucketCRUDMachine>
 };
 
 type GlobalServicesEvent =
@@ -27,6 +30,7 @@ const GlobalServicesMachine = createMachine({
   },
   context: {
     testCRUDActor: {} as any,
+    bucketCRUDActor: {} as any,
   },
   id: "globalServices",
   initial: "start",
@@ -45,6 +49,7 @@ const GlobalServicesMachine = createMachine({
   actions: {
     spawnCRUDActors: assign({
       testCRUDActor: () => spawn(TestCRUDMachine, TestCRUDMachine.id),
+      bucketCRUDActor: () => spawn(BucketCRUDMachine, BucketCRUDMachine.id),
     })
   },
   services: {},

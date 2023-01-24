@@ -20,11 +20,11 @@ export default class Repository<T extends BaseDoc> {
     this.collection = collection;
   }
 
-  find(query?: Record<string, string>): Promise<T[]> {
+  read(query?: Record<string, string>): Promise<T[]> {
     return this.db.find(query ?? {});
   }
 
-  insert(newDocs: OptionalId<T> | (OptionalId<T>[])): Promise<T | (T[])> {
+  create(newDocs: OptionalId<T> | (OptionalId<T>[])): Promise<T | (T[])> {
     return this.db.insert(newDocs);
   }
 
@@ -33,14 +33,14 @@ export default class Repository<T extends BaseDoc> {
     return this.db.update({ _id }, { $set: { ...update } })
   }
 
+  // updateMany(docs:[string, Partial<T>][]): Promise<number> {
   updateMany(docs: PartialWithId<T>[]): Promise<number> {
     if (docs.length === 0) return Promise.resolve(0);
-    return new Promise((resolve, reject) => {
-      Promise.all(docs.map(({ _id, ...doc }) => this.update(_id, doc as Partial<T>)))
-        .then((nums: number[]) => nums.reduce((acc, x) => acc + x, 0))
-        .then(resolve)
-        .catch((err) => reject(new Error(`Updating documents with _ids: ${JSON.stringify(docs.map((d) => (d as any)._id))} - ${err.message}`)));
-    });
+    return Promise.all(docs.map(({ _id, ...doc }) => this.update(_id, doc as Partial<T>)))
+      .then((nums: number[]) => nums.reduce((acc, x) => acc + x, 0))
+      .catch((err) => {
+        throw (new Error(`Updating documents with _ids: ${JSON.stringify(docs.map((d) => (d as any)._id))} - ${err.message}`))
+      })
   }
 
   delete(_id: string): Promise<number> {
