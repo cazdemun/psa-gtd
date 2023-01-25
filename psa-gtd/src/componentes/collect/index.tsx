@@ -4,9 +4,9 @@ import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import DebugModule from '../debug';
 import { BucketItem } from '../../models';
-import { Button, Col, List, Row, Space, Typography } from 'antd';
-import { CalculatorOutlined, DeleteOutlined } from '@ant-design/icons';
-import { trace } from '../../utils';
+import { Button, Col, Form, Input, List, Row, Space, Typography } from 'antd';
+import { CalculatorOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons';
+import { useForm } from 'antd/es/form/Form';
 
 const sortByIndex = (a: BucketItem, b: BucketItem) => {
   let aArr = a.index.split(".");
@@ -21,6 +21,48 @@ const sortByIndex = (a: BucketItem, b: BucketItem) => {
   return aArr.length - bArr.length;
 }
 
+type BucketInputProps = {
+  onCreate: (bucketItem: string) => any
+}
+
+const BucketInput: React.FC<BucketInputProps> = (props) => {
+  const [form] = useForm<{ bucketItem: string }>();
+  return (
+    <>
+      <Form
+        form={form}
+        onFinish={(values) => {
+          props.onCreate(values.bucketItem);
+          form.resetFields();
+        }}
+      >
+        <Form.Item
+          name='bucketItem'
+          rules={[
+            {
+              required: true,
+              message: 'Please add some text'
+            }
+          ]}
+        >
+          <Input.TextArea
+            autoSize={{ minRows: 10 }}
+          />
+        </Form.Item>
+        <Row justify='end'>
+          <Button
+            htmlType='submit'
+            type='primary'
+            icon={<PlusOutlined />}
+          >
+            Add
+          </Button>
+        </Row>
+      </Form>
+    </>
+  );
+};
+
 type CollectModuleProps = {
   bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
 }
@@ -31,7 +73,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
   const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
   const [lastIndex] = sortedIndexes;
   return (
-    <Row>
+    <Row gutter={[16, 16]} style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '16px' }}>
       <Col span={6}>
         <DebugModule
           crudService={props.bucketCRUDService}
@@ -52,6 +94,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
           dataSource={sortedDocs}
           renderItem={(doc) => (
             <List.Item
+              style={{ alignItems: 'start' }}
               extra={(
                 <Space>
                   <Button
@@ -96,7 +139,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
                 </Col>
                 <Col span={22}>
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    {trace(doc.content.split('\n')).map((text, i) => text !== '' ?
+                    {(doc.content).split('\n').map((text, i) => text !== '' ?
                       (
                         <Typography.Text key={i.toString()}>{text}</Typography.Text>
                       ) : (
@@ -107,6 +150,18 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
               </Row>
             </List.Item>
           )}
+        />
+      </Col>
+      <Col span={6}>
+        <BucketInput
+          onCreate={(bucketItem) => props.bucketCRUDService.send({
+            type: 'CREATE',
+            doc: {
+              content: bucketItem,
+              created: Date.now(),
+              index: ((lastIndex ?? 0) + 1).toString(),
+            }
+          })}
         />
       </Col>
     </Row>
