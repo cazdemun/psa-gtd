@@ -104,6 +104,26 @@ const _createCRUDMachine = <T extends BaseDoc>(repo: Repo<T>) =>
           DELETE: {
             target: "deletingService",
           },
+          BATCH: {
+            target: "batchProcessing",
+          },
+        },
+      },
+
+      batchProcessing: {
+        invoke: {
+          src: "batch",
+          onDone: [
+            {
+              target: "reading",
+              actions: ["createDocsMap"],
+            },
+          ],
+          onError: [
+            {
+              target: "failure",
+            },
+          ],
         },
       },
 
@@ -187,6 +207,15 @@ const _createCRUDMachine = <T extends BaseDoc>(repo: Repo<T>) =>
       },
       deleteDoc: (_, event: CRUDEvent<T>) => {
         if (event.type === 'DELETE') return repo.delete(event._id ?? '');
+        return Promise.resolve(0);
+      },
+      batch: async (_, event) => {
+        await Promise.all(event.data.map((op) => {
+          if (op.type === 'CREATE') return repo.create(op.doc);
+          if (op.type === 'UPDATE') return repo.update(op._id ?? '', op.doc);
+          if (op.type === 'DELETE') return repo.delete(op._id ?? '');
+          return Promise.resolve(0);
+        }));
         return Promise.resolve(0);
       },
     },

@@ -11,6 +11,7 @@ type DebugModuleProps<T extends BaseDoc> = {
   newDoc: OptionalId<T>
   updateDoc: (doc: T) => Partial<T>
   span?: number
+  docs?: T[]
 }
 
 const DebugModule = <T extends BaseDoc>(props: DebugModuleProps<T>) => {
@@ -24,7 +25,7 @@ const DebugModule = <T extends BaseDoc>(props: DebugModuleProps<T>) => {
         Add
       </Button>
       <Col span={props.span ?? 24}>
-        {docs.map((doc) => (
+        {(props.docs ?? docs).map((doc) => (
           <Card
             key={doc._id}
             title={doc._id}
