@@ -3,7 +3,7 @@ import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
 import { Button, Checkbox, Col, Form, List, Row, Space, Typography } from 'antd';
-import { DeleteOutlined, EditFilled, EditOutlined, ScissorOutlined } from '@ant-design/icons';
+import { BuildFilled, BuildOutlined, DeleteOutlined, EditFilled, EditOutlined, SaveOutlined, ScissorOutlined } from '@ant-design/icons';
 import { useForm } from 'antd/es/form/Form';
 import { multiSlice } from '../../utils';
 
@@ -74,15 +74,23 @@ const BucketItemContent: React.FC<BucketItemContentProps> = (props) => {
         {lines.map((text, i) => (
           <Row gutter={[16, 0]} key={i.toString()}>
             <BucketItemLine lineNumber={i + 1} text={text} />
-            {props.editable && i !== (lines.length - 1) && (
-              <Col span={2}>
+            <Col span={2}>
+              {props.editable && i !== (lines.length - 1) && (
                 <Row justify='end'>
-                  <Form.Item valuePropName="checked" name={`${i + 1}`} style={{ margin: '0px' }}>
+                  <Form.Item valuePropName="checked" name={`${i + 1}`} style={{ margin: '0px', minHeight: '22px' }}>
                     <Checkbox />
                   </Form.Item>
                 </Row>
-              </Col>
-            )}
+              )}
+            </Col>
+            <Col span={22}>
+              {props.editable && (
+                <>
+                  <div style={{ height: '15px' }} />
+                  <div style={{ width: '95%', height: '11px', borderTop: '1px solid lightgray' }} />
+                </>
+              )}
+            </Col>
           </Row>
         ))}
       </Col>
@@ -93,10 +101,75 @@ const BucketItemContent: React.FC<BucketItemContentProps> = (props) => {
 type BucketItemEditProps = {
   doc: BucketItem
   bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
-  onToggle: (...args: any[]) => any
+  toView: (...args: any[]) => any
+  toSlice: (...args: any[]) => any
 }
 
 const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
+  // const lines = (props.doc.content).split('\n');
+  const [form] = useForm<Record<number, boolean>>();
+
+  return (
+    <Form
+      form={form}
+      onFinish={(values) => {
+        // const slicePositions = Object.entries(values).filter(([_, value]) => value === true).map(([key, _]) => parseInt(key));
+        // if (slicePositions.length > 0) {
+        //   const output = multiSlice(lines, slicePositions);
+        //   props.bucketCRUDService.send({
+        //     type: 'BATCH',
+        //     data: [
+        //       {
+        //         type: 'CREATE',
+        //         doc: output.map((textLines, i) => ({
+        //           content: textLines.join('\n'),
+        //           created: Date.now(),
+        //           index: `${props.doc.index}.${i + 1}`,
+        //         })),
+        //       },
+        //       {
+        //         type: 'DELETE',
+        //         _id: props.doc._id,
+        //       },
+        //     ],
+        //   })
+        //   form.resetFields();
+        // }
+      }}
+    >
+      <List.Item
+        style={{ alignItems: 'start' }}
+        extra={(
+          <Space direction='vertical'>
+            <Button
+              icon={<EditFilled />}
+              onClick={props.toView}
+            />
+            <Button
+              icon={<BuildOutlined />}
+              onClick={props.toSlice}
+            />
+            <Button
+              htmlType='submit'
+              icon={<SaveOutlined />}
+            />
+          </Space>
+        )}
+      >
+        Test
+      </List.Item>
+    </Form>
+  );
+};
+
+type BucketItemSliceProps = {
+  doc: BucketItem
+  bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
+  toEdit: (...args: any[]) => any
+  toView: (...args: any[]) => any
+}
+
+const BucketItemSlice: React.FC<BucketItemSliceProps> = (props) => {
   const lines = (props.doc.content).split('\n');
   const [form] = useForm<Record<number, boolean>>();
 
@@ -107,7 +180,6 @@ const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
         const slicePositions = Object.entries(values).filter(([_, value]) => value === true).map(([key, _]) => parseInt(key));
         if (slicePositions.length > 0) {
           const output = multiSlice(lines, slicePositions);
-          console.log(output);
           props.bucketCRUDService.send({
             type: 'BATCH',
             data: [
@@ -134,8 +206,12 @@ const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
         extra={(
           <Space direction='vertical'>
             <Button
-              icon={<EditFilled />}
-              onClick={props.onToggle}
+              icon={<EditOutlined />}
+              onClick={props.toEdit}
+            />
+            <Button
+              icon={<BuildFilled />}
+              onClick={props.toView}
             />
             <Button
               htmlType='submit'
@@ -153,7 +229,8 @@ const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
 type BucketItemViewProps = {
   doc: BucketItem
   bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
-  onToggle: (...args: any[]) => any
+  toEdit: (...args: any[]) => any
+  toSlice: (...args: any[]) => any
 }
 
 const BucketItemView: React.FC<BucketItemViewProps> = (props) => {
@@ -164,7 +241,11 @@ const BucketItemView: React.FC<BucketItemViewProps> = (props) => {
         <Space direction='vertical'>
           <Button
             icon={<EditOutlined />}
-            onClick={props.onToggle}
+            onClick={props.toEdit}
+          />
+          <Button
+            icon={<BuildOutlined />}
+            onClick={props.toSlice}
           />
           <Button
             icon={<DeleteOutlined />}
@@ -185,18 +266,22 @@ type BucketItemProps = {
 }
 
 const BucketItemListItem: React.FC<BucketItemProps> = (props) => {
-  const [editable, setEditable] = useState<boolean>(false);
+  const [state, setState] = useState<'view' | 'slice' | 'edit'>('view');
 
   useEffect(() => {
-    setEditable(false);
+    setState('view');
   }, [props.doc]);
 
   return (
     <>
-      {editable ? (
-        <BucketItemEdit doc={props.doc} bucketCRUDService={props.bucketCRUDService} onToggle={() => setEditable((value) => !value)} />
-      ) : (
-        <BucketItemView doc={props.doc} bucketCRUDService={props.bucketCRUDService} onToggle={() => setEditable((value) => !value)} />
+      {state === 'view' && (
+        <BucketItemView doc={props.doc} bucketCRUDService={props.bucketCRUDService} toEdit={() => setState('edit')} toSlice={() => setState('slice')} />
+      )}
+      {state === 'slice' && (
+        <BucketItemSlice doc={props.doc} bucketCRUDService={props.bucketCRUDService} toEdit={() => setState('edit')} toView={() => setState('view')} />
+      )}
+      {state === 'edit' && (
+        <BucketItemEdit doc={props.doc} bucketCRUDService={props.bucketCRUDService} toSlice={() => setState('slice')} toView={() => setState('view')} />
       )}
     </>
   );
