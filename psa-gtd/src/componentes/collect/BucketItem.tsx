@@ -4,33 +4,10 @@ import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
 import { Button, Checkbox, Col, Form, List, Row, Space, Typography } from 'antd';
 import { BuildFilled, BuildOutlined, DeleteOutlined, EditFilled, EditOutlined, SaveOutlined, ScissorOutlined } from '@ant-design/icons';
-import { useForm } from 'antd/es/form/Form';
+import { FormInstance, useForm } from 'antd/es/form/Form';
 import { multiSlice } from '../../utils';
 
-// onClick={() => props.bucketCRUDService.send({
-//   type: 'BATCH',
-//   data: [
-//     {
-//       type: 'CREATE',
-//       doc: [
-//         {
-//           content: 'New Test',
-//           created: Date.now(),
-//           index: `${props.doc.index}.1`,
-//         },
-//         {
-//           content: 'New Test',
-//           created: Date.now(),
-//           index: `${props.doc.index}.2`,
-//         },
-//       ]
-//     },
-//     {
-//       type: 'DELETE',
-//       _id: props.doc._id,
-//     },
-//   ],
-// })}
+import './BucketItem.css';
 
 type BucketItemLineProps = {
   lineNumber: number
@@ -56,9 +33,45 @@ const BucketItemLine: React.FC<BucketItemLineProps> = (props) => {
   );
 };
 
+type LongCheckButtonProps = {
+  lineNumber: number
+  form?: FormInstance<Record<number, boolean>>
+}
+
+const LongCheckButton: React.FC<LongCheckButtonProps> = (props) => {
+  const [phantomValue, setPhantomValue] = useState<boolean>(false);
+
+  return (
+    <>
+      <Col span={2}>
+        <Row justify='end'>
+          <Form.Item valuePropName="checked" name={props.lineNumber.toString()} style={{ margin: '0px', minHeight: '22px' }}>
+            <Checkbox />
+          </Form.Item>
+        </Row>
+      </Col>
+      <Col span={22}>
+        <>
+          <div style={{ height: '15px' }} />
+          <div
+            className={phantomValue ? 'slice-separator-selected' : 'slice-separator'}
+            onClick={() => {
+              const pathValue = props.lineNumber.toString();
+              const value = props.form?.getFieldValue(props.lineNumber.toString());
+              props.form?.setFieldValue(pathValue, !value);
+              setPhantomValue(!value);
+            }}
+          />
+        </>
+      </Col>
+    </>
+  );
+};
+
 type BucketItemContentProps = {
   doc: BucketItem
   editable?: boolean
+  form?: FormInstance<Record<number, boolean>>
 }
 
 const BucketItemContent: React.FC<BucketItemContentProps> = (props) => {
@@ -74,23 +87,12 @@ const BucketItemContent: React.FC<BucketItemContentProps> = (props) => {
         {lines.map((text, i) => (
           <Row gutter={[16, 0]} key={i.toString()}>
             <BucketItemLine lineNumber={i + 1} text={text} />
-            <Col span={2}>
-              {props.editable && i !== (lines.length - 1) && (
-                <Row justify='end'>
-                  <Form.Item valuePropName="checked" name={`${i + 1}`} style={{ margin: '0px', minHeight: '22px' }}>
-                    <Checkbox />
-                  </Form.Item>
-                </Row>
-              )}
-            </Col>
-            <Col span={22}>
-              {props.editable && (
-                <>
-                  <div style={{ height: '15px' }} />
-                  <div style={{ width: '95%', height: '11px', borderTop: '1px solid lightgray' }} />
-                </>
-              )}
-            </Col>
+            {props.editable && i !== (lines.length - 1) && (
+              <LongCheckButton
+                form={props.form}
+                lineNumber={i + 1}
+              />
+            )}
           </Row>
         ))}
       </Col>
@@ -220,7 +222,11 @@ const BucketItemSlice: React.FC<BucketItemSliceProps> = (props) => {
           </Space>
         )}
       >
-        <BucketItemContent doc={props.doc} editable />
+        <BucketItemContent
+          editable
+          doc={props.doc}
+          form={form}
+        />
       </List.Item>
     </Form>
   );
