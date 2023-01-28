@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
-import { Button, Checkbox, Col, Form, List, Row, Space, Typography } from 'antd';
+import { Button, Checkbox, Col, Form, Input, List, Row, Space, Typography } from 'antd';
 import { BuildFilled, BuildOutlined, DeleteOutlined, EditFilled, EditOutlined, SaveOutlined, ScissorOutlined } from '@ant-design/icons';
 import { FormInstance, useForm } from 'antd/es/form/Form';
 import { multiSlice } from '../../utils';
@@ -108,49 +108,43 @@ type BucketItemEditProps = {
 }
 
 const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
-  // const lines = (props.doc.content).split('\n');
-  const [form] = useForm<Record<number, boolean>>();
+  const [form] = useForm<{ bucketItemContent: string }>();
+
+  useEffect(() => {
+    form.setFieldValue('value', props.doc.content);
+  }, [form, props.doc]);
 
   return (
     <Form
       form={form}
+      initialValues={{
+        bucketItemContent: props.doc.content
+      }}
       onFinish={(values) => {
-        // const slicePositions = Object.entries(values).filter(([_, value]) => value === true).map(([key, _]) => parseInt(key));
-        // if (slicePositions.length > 0) {
-        //   const output = multiSlice(lines, slicePositions);
-        //   props.bucketCRUDService.send({
-        //     type: 'BATCH',
-        //     data: [
-        //       {
-        //         type: 'CREATE',
-        //         doc: output.map((textLines, i) => ({
-        //           content: textLines.join('\n'),
-        //           created: Date.now(),
-        //           index: `${props.doc.index}.${i + 1}`,
-        //         })),
-        //       },
-        //       {
-        //         type: 'DELETE',
-        //         _id: props.doc._id,
-        //       },
-        //     ],
-        //   })
-        //   form.resetFields();
-        // }
+        props.bucketCRUDService.send({
+          type: 'UPDATE',
+          _id: props.doc._id,
+          doc: {
+            content: values.bucketItemContent,
+          }
+        })
+        props.toView();
       }}
     >
       <List.Item
         style={{ alignItems: 'start' }}
         extra={(
-          <Space direction='vertical'>
-            <Button
-              icon={<EditFilled />}
-              onClick={props.toView}
-            />
-            <Button
-              icon={<BuildOutlined />}
-              onClick={props.toSlice}
-            />
+          <Space align='start'>
+            <Space direction='vertical'>
+              <Button
+                icon={<EditFilled />}
+                onClick={props.toView}
+              />
+              <Button
+                icon={<BuildOutlined />}
+                onClick={props.toSlice}
+              />
+            </Space>
             <Button
               htmlType='submit'
               icon={<SaveOutlined />}
@@ -158,7 +152,27 @@ const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
           </Space>
         )}
       >
-        Test
+        <Row style={{ width: '100%' }} gutter={[16, 16]}>
+          <Col span={2} style={{ textAlign: 'left' }}>
+            <Row justify='end'>
+              <Typography.Text>{`${props.doc.index}`}</Typography.Text>
+            </Row>
+          </Col>
+          <Col span={22}>
+            <Form.Item
+              style={{ paddingRight: '8px' }}
+              name='bucketItemContent'
+              rules={[
+                {
+                  required: true,
+                  message: 'Please add some text'
+                }
+              ]}
+            >
+              <Input.TextArea autoSize />
+            </Form.Item>
+          </Col>
+        </Row>
       </List.Item>
     </Form>
   );
@@ -206,15 +220,17 @@ const BucketItemSlice: React.FC<BucketItemSliceProps> = (props) => {
       <List.Item
         style={{ alignItems: 'start' }}
         extra={(
-          <Space direction='vertical'>
-            <Button
-              icon={<EditOutlined />}
-              onClick={props.toEdit}
-            />
-            <Button
-              icon={<BuildFilled />}
-              onClick={props.toView}
-            />
+          <Space align='start'>
+            <Space direction='vertical'>
+              <Button
+                icon={<EditOutlined />}
+                onClick={props.toEdit}
+              />
+              <Button
+                icon={<BuildFilled />}
+                onClick={props.toView}
+              />
+            </Space>
             <Button
               htmlType='submit'
               icon={<ScissorOutlined />}
@@ -244,15 +260,17 @@ const BucketItemView: React.FC<BucketItemViewProps> = (props) => {
     <List.Item
       style={{ alignItems: 'start' }}
       extra={(
-        <Space direction='vertical'>
-          <Button
-            icon={<EditOutlined />}
-            onClick={props.toEdit}
-          />
-          <Button
-            icon={<BuildOutlined />}
-            onClick={props.toSlice}
-          />
+        <Space align='start'>
+          <Space direction='vertical'>
+            <Button
+              icon={<EditOutlined />}
+              onClick={props.toEdit}
+            />
+            <Button
+              icon={<BuildOutlined />}
+              onClick={props.toSlice}
+            />
+          </Space>
           <Button
             icon={<DeleteOutlined />}
             onClick={() => props.bucketCRUDService.send({ type: 'DELETE', _id: props.doc._id, })}
