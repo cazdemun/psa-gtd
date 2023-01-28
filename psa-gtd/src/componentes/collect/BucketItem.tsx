@@ -52,7 +52,7 @@ const LongCheckButton: React.FC<LongCheckButtonProps> = (props) => {
       </Col>
       <Col span={22}>
         <>
-          <div style={{ height: '15px' }} />
+          <div style={{ height: '11px' }} />
           <div
             className={phantomValue ? 'slice-separator-selected' : 'slice-separator'}
             onClick={() => {

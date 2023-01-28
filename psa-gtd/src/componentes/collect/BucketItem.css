@@ -23,3 +23,7 @@
   height: 11px;
   border-top: 2px solid lightgray;
 }
+
+.ant-form-item .ant-form-item-control-input {
+  min-height: 22px;
+}
