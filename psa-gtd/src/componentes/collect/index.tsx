@@ -77,7 +77,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
           span={24}
         />
       </Col>
-      <Col offset={6} span={12}>
+      <Col offset={4} span={14}>
         <List
           dataSource={sortedDocs}
           renderItem={(doc) => (

@@ -169,7 +169,7 @@ const BucketItemEdit: React.FC<BucketItemEditProps> = (props) => {
                 }
               ]}
             >
-              <Input.TextArea autoSize />
+              <Input.TextArea autoSize showCount />
             </Form.Item>
           </Col>
         </Row>
