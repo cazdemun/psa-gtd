@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
+import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
 import { Button, Checkbox, Col, Form, Input, List, Row, Space, Typography } from 'antd';

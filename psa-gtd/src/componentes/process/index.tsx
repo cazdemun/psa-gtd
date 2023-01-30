@@ -1,13 +1,11 @@
 import React, { useEffect } from 'react';
-import { useInterpret, useSelector } from '@xstate/react';
-import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
+import { useSelector } from '@xstate/react';
+import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
-import { Button, Col, Divider, List, Row, Space } from 'antd';
-import { sortByIndex } from '../../utils';
+import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import { BucketItem } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
-import bucketItemsProcessesService from '../../machines/bucketItemsProcessesServices';
 
 
 type BucketItemProcessListItemProps = {
@@ -154,12 +152,49 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
           Sent to trash
         </>
       )}
-      <Row style={{ flex: '1', padding: '0px 8px 8px 0px' }} align='bottom' justify='end'>
-        <Button onClick={() => props.processActor.send({ type: 'RESET' })} disabled={determineAction}>
-          Reset
-        </Button>
+      <Row
+        style={{ flex: '1', padding: '8px 8px 8px 0px', display: 'flex', alignItems: 'end', justifyContent: 'end', alignContent: 'end' }}
+        gutter={[8, 8]}
+      >
+        <Col span={24} hidden>
+          <Row justify='end'>
+            <Space>
+              <Button>
+                Actionable
+              </Button>
+              <Button>
+                Do it
+              </Button>
+              <Button>
+                Someday
+              </Button>
+            </Space>
+          </Row>
+        </Col>
+        <Col span={24} hidden>
+          <Row justify='end'>
+            <Space>
+              <Button>
+                Reference
+              </Button>
+              <Button>
+                Support
+              </Button>
+              <Button>
+                Trash
+              </Button>
+            </Space>
+          </Row>
+        </Col>
+        <Col span={24}>
+          <Row justify='end'>
+            <Button onClick={() => props.processActor.send({ type: 'RESET' })} disabled={determineAction}>
+              Reset
+            </Button>
+          </Row>
+        </Col>
       </Row>
-    </div>
+    </div >
   );
 };
 
@@ -195,7 +230,15 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
         />
       </Col>
       <Col span={8}>
+        <Card title='Actionable table (max. 5)'>
 
+        </Card>
+        <Card title='Reference/Support table (max. TBD)'>
+          This is a table because as a reference it needs to be put into a category and maybe linked to a project, and as a support material needs to be necessary linked to a project that may not be even exists yet.
+        </Card>
+        <Card title='Trash'>
+
+        </Card>
       </Col>
     </Row >
   );

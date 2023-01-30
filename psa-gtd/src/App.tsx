@@ -1,12 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
-import GlobalServicesMachine from './lib/GlobalServicesMachine';
+import GlobalServicesMachine from './machines/GlobalServicesMachine';
 import CollectModule from './componentes/collect';
 import { Menu, MenuProps } from 'antd';
 import { EyeOutlined, FireOutlined } from '@ant-design/icons';
 import ProcessModule from './componentes/process';
 import bucketItemsProcessesService from './machines/bucketItemsProcessesServices';
 import { sortByIndex } from './utils';
+import GlobalServicesContext from './componentes/context/GlobalServicesContext';
 
 const paths = [
   'collect',
@@ -46,11 +47,11 @@ function App() {
   }, [ProcessesService, docs])
 
   return (
-    <>
+    <GlobalServicesContext.Provider value={{ service: GlobalServices }}>
       <Menu onClick={(e) => setPath(e.key as Path)} selectedKeys={[path]} mode="horizontal" items={items(docs.length)} />
       {path === 'collect' && (<CollectModule bucketCRUDService={BucketCRUDService} />)}
       {path === 'process' && (<ProcessModule bucketCRUDService={BucketCRUDService} sortedDocs={docs.slice().sort((a, b) => sortByIndex(a, b))} processes={processes} />)}
-    </>
+    </GlobalServicesContext.Provider>
   );
 }
 

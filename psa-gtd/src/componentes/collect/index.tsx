@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from '@xstate/react';
-import { BucketCRUDStateMachine } from '../../lib/GlobalServicesMachine';
+import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import DebugModule from '../debug';
 import { Button, Col, Form, Input, List, Row } from 'antd';

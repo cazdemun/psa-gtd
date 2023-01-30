@@ -26,14 +26,21 @@ type Reference = {}
 
 type Support = {}
 
-type Project = {}
+type Actionable = {
+}
 type Action = {
   delegate?: boolean
   scheduled?: number
 }
 
-type ProcessedItems = BaseDoc & BaseProcessedItem
-  & (Trash | Someday | Reference | Support | Project | Action)
+type Project = {}
+
+export type ProcessedItems = BaseDoc & BaseProcessedItem
+  & (
+    | Trash | Someday
+    | Reference | Support
+    | Project | Actionable | Action
+  )
 
 // periodic action
 // everyday action
