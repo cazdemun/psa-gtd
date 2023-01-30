@@ -287,6 +287,8 @@ const BucketItemView: React.FC<BucketItemViewProps> = (props) => {
 type BucketItemProps = {
   doc: BucketItem
   bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
+  mainColSpan?: number
+  children?: React.ReactNode
 }
 
 const BucketItemListItem: React.FC<BucketItemProps> = (props) => {

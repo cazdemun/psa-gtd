@@ -79,6 +79,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
       </Col>
       <Col offset={4} span={14}>
         <List
+          bordered
           dataSource={sortedDocs}
           renderItem={(doc) => (
             <BucketItemListItem doc={doc} bucketCRUDService={props.bucketCRUDService} />
