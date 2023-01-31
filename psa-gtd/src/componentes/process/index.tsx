@@ -1,33 +1,48 @@
-import React, { useEffect } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
-import { BucketItem } from '../../models';
+import { BucketItem, Reference } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
+import GlobalServicesContext from '../context/GlobalServicesContext';
+import { ReferenceSupporTable } from './TemporalTables';
 
+const getLastIndexFirstLevel = <T extends { index: string },>(docs: T[]): number => {
+  const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
+  const [lastIndex] = sortedIndexes;
+  return lastIndex ?? 0;
+}
 
 type BucketItemProcessListItemProps = {
   doc: BucketItem
-  bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
   processActor: ActorRefFrom<typeof creatBucketItemProcessMachine>
 }
 
 const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (props) => {
+  const { service } = useContext(GlobalServicesContext);
+
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const processedDocs = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
+
+  const BucketCRUDService = useSelector(service, ({ context }) => context.bucketCRUDActor);
+
+  const determineRelevance = useSelector(props.processActor, (state) => state.matches('determineRelevance'))
 
   const determineAction = useSelector(props.processActor, (state) => state.matches('determineAction'))
-  const actionableTable = useSelector(props.processActor, (state) => state.matches('actionableTable'))
-  const draftActions = useSelector(props.processActor, (state) => state.matches('draftActions'))
-  const referenceOrSupport = useSelector(props.processActor, (state) => state.matches('referenceOrSupport'))
-  const referenceTable = useSelector(props.processActor, (state) => state.matches('referenceTable'))
-  const supportTable = useSelector(props.processActor, (state) => state.matches('supportTable'))
+  const somedayMaybe = useSelector(props.processActor, (state) => state.matches('somedayMaybe'))
   const trash = useSelector(props.processActor, (state) => state.matches('trash'))
 
-  const checkQuarterly = useSelector(props.processActor, (state) => state.matches('checkQuarterly'))
-  const somedayMaybe = useSelector(props.processActor, (state) => state.matches('somedayMaybe'))
+  const draftActions = useSelector(props.processActor, (state) => state.matches('draftActions'))
+  const referenceOrSupport = useSelector(props.processActor, (state) => state.matches('referenceOrSupport'))
 
+  const actionableTable = useSelector(props.processActor, (state) => state.matches('actionableTable'))
+  const referenceTable = useSelector(props.processActor, (state) => state.matches('referenceTable'))
+  const supportTable = useSelector(props.processActor, (state) => state.matches('supportTable'))
   const doIt = useSelector(props.processActor, (state) => state.matches('doIt'))
+
+  const lastIndex = getLastIndexFirstLevel(processedDocs);
 
   useEffect(() => {
     props.processActor.send({ type: 'RESET' });
@@ -35,6 +50,26 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
 
   return (
     <div style={{ height: '100%', flex: '1', display: 'flex', flexDirection: 'column' }}>
+      {determineRelevance && (
+        <Space direction='vertical'>
+          <Row>
+            Is this relevant on this quatrimester? (check goals and milestones)
+          </Row>
+          <Space>
+            <Button onClick={() => props.processActor.send({ type: 'QUARTERLY' })}>
+              Yes, absolutely
+            </Button>
+            <Button onClick={() => props.processActor.send({ type: 'NOT_QUARTERLY' })}>
+              No, not really
+            </Button>
+          </Space>
+          <Space>
+            <Button onClick={() => props.processActor.send({ type: 'TRASH' })}>
+              Trash
+            </Button>
+          </Space>
+        </Space>
+      )}
       {determineAction && (
         <Row>
           <Space direction='vertical'>
@@ -53,32 +88,34 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
               <Button onClick={() => props.processActor.send({ type: 'NO_ACTION' })}>
                 No action
               </Button>
-              <Button onClick={() => props.processActor.send({ type: 'TRASH' })}>
-                Trash
-              </Button>
             </Space>
           </Space>
         </Row>
       )}
+      {somedayMaybe && (
+        <>
+          Sent to someday/maybe (add a potential date here?)
+        </>
+      )}
+      {trash && (
+        <>
+          Sent to trash
+        </>
+      )}
       {draftActions && (
         <Space direction='vertical'>
           <Row>
-            Does it need to be done on this quatrimester?
+            Can it be done under two minutes?
           </Row>
           <Space>
-            <Button onClick={() => props.processActor.send({ type: 'QUARTERLY' })}>
-              Yes, absolutely
+            <Button onClick={() => props.processActor.send({ type: 'TWO_MINUTES' })}>
+              Yes, it can be done ASAP
             </Button>
-            <Button onClick={() => props.processActor.send({ type: 'NOT_QUARTERLY' })}>
-              No, not really
+            <Button onClick={() => props.processActor.send({ type: 'MORE_THAN_TWO_MINUTES' })}>
+              No, it will take longer
             </Button>
           </Space>
         </Space>
-      )}
-      {actionableTable && (
-        <>
-          Sent to actionableTable, you have a limit of (5)
-        </>
       )}
       {referenceOrSupport && (
         <Space direction='vertical'>
@@ -96,7 +133,26 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
             </ul>
           </Row>
           <Space>
-            <Button onClick={() => props.processActor.send({ type: 'REFERENCE' })}>
+            <Button onClick={() => {
+              props.processActor.send({ type: 'REFERENCE' });
+
+              const newItem: Reference = {
+                type: 'reference',
+                projects: [],
+              }
+
+              ProcessedCRUDService.send({
+                type: 'CREATE',
+                doc: {
+                  created: Date.now(),
+                  index: (lastIndex + 1).toString(),
+                  content: props.doc.content,
+                  ...newItem,
+                }
+              });
+
+              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id })
+            }}>
               Reference
             </Button>
             <Button onClick={() => props.processActor.send({ type: 'SUPPORT' })}>
@@ -105,36 +161,9 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
           </Space>
         </Space>
       )}
-      {checkQuarterly && (
-        <Space direction='vertical'>
-          <Row>
-            Can it be done under two minutes?
-          </Row>
-          <Space>
-            <Button onClick={() => props.processActor.send({ type: 'TWO_MINUTES' })}>
-              Yes, it can be done ASAP
-            </Button>
-            <Button onClick={() => props.processActor.send({ type: 'MORE_THAN_TWO_MINUTES' })}>
-              No, it will take longer
-            </Button>
-          </Space>
-        </Space>
-      )}
-      {doIt && (
-        <Space direction='vertical'>
-          <Row>
-            DO IT! (Press the done button when finished)
-          </Row>
-          <Row justify='center'>
-            <Button type='primary'>
-              Done
-            </Button>
-          </Row>
-        </Space>
-      )}
-      {somedayMaybe && (
+      {actionableTable && (
         <>
-          Sent to someday/maybe (add a potential date here?)
+          Sent to actionableTable, you have a limit of (5)
         </>
       )}
       {referenceTable && (
@@ -147,10 +176,17 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
           Sent to support table (tbd)
         </>
       )}
-      {trash && (
-        <>
-          Sent to trash
-        </>
+      {doIt && (
+        <Space direction='vertical'>
+          <Row>
+            DO IT! (Press the done button when finished)
+          </Row>
+          <Row justify='center'>
+            <Button type='primary'>
+              Done
+            </Button>
+          </Row>
+        </Space>
       )}
       <Row
         style={{ flex: '1', padding: '8px 8px 8px 0px', display: 'flex', alignItems: 'end', justifyContent: 'end', alignContent: 'end' }}
@@ -220,7 +256,7 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
                 <Row style={{ height: '100%' }} >
                   <Divider type='vertical' style={{ height: '100%' }} />
                   {props.processes.at(i) !== undefined ? (
-                    <BucketItemProcessListItem doc={doc} bucketCRUDService={props.bucketCRUDService} processActor={props.processes.at(i) as any} />
+                    <BucketItemProcessListItem doc={doc} processActor={props.processes.at(i) as any} />
                   ) : null}
                 </Row>
               </Col>
@@ -230,15 +266,15 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
         />
       </Col>
       <Col span={8}>
-        <Card title='Actionable table (max. 5)'>
+        <Space direction='vertical'>
+          <Card title='Actionable table (max. 5)'>
 
-        </Card>
-        <Card title='Reference/Support table (max. TBD)'>
-          This is a table because as a reference it needs to be put into a category and maybe linked to a project, and as a support material needs to be necessary linked to a project that may not be even exists yet.
-        </Card>
-        <Card title='Trash'>
+          </Card>
+          <ReferenceSupporTable />
+          <Card title='Trash'>
 
-        </Card>
+          </Card>
+        </Space>
       </Col>
     </Row >
   );

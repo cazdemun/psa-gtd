@@ -27,7 +27,7 @@
         eventsCausingServices: {
           
         };
-        matchesStates: "actionableTable" | "checkQuarterly" | "determineAction" | "doIt" | "draftActions" | "referenceOrSupport" | "referenceTable" | "somedayMaybe" | "supportTable" | "trash";
+        matchesStates: "actionableTable" | "determineAction" | "determineRelevance" | "doIt" | "draftActions" | "referenceOrSupport" | "referenceTable" | "somedayMaybe" | "supportTable" | "trash";
         tags: never;
       }
   

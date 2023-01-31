@@ -2,7 +2,7 @@ import {
   createMachine, assign, ActorRefFrom, spawn
 } from 'xstate';
 import createCRUDMachine from '../lib/CRUDMachine';
-import { BucketItem, ProcessedItems } from '../models';
+import { BucketItem, ProcessedItem } from '../models';
 
 type Test = {
   _id: string
@@ -13,7 +13,7 @@ const TestCRUDMachine = createCRUDMachine<Test>('test', 'local');
 export type TestCRUDStateMachine = typeof TestCRUDMachine;
 const BucketCRUDMachine = createCRUDMachine<BucketItem>('bucket', 'local');
 export type BucketCRUDStateMachine = typeof BucketCRUDMachine;
-const ProcessedCRUDMachine = createCRUDMachine<ProcessedItems>('processed', 'local');
+const ProcessedCRUDMachine = createCRUDMachine<ProcessedItem>('processed', 'local');
 export type ProcessedCRUDStateMachine = typeof ProcessedCRUDMachine;
 
 export type GlobalServicesContext = {
