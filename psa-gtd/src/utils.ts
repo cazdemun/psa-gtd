@@ -36,3 +36,9 @@ export const sortByIndex = <T extends { index: string }>(a: T, b: T) => {
 
   return aArr.length - bArr.length;
 }
+
+export const getLastIndexFirstLevel = <T extends { index: string }>(docs: T[]): number => {
+  const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
+  const [lastIndex] = sortedIndexes;
+  return lastIndex ?? 0;
+}

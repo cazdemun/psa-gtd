@@ -4,16 +4,11 @@ import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
-import { BucketItem, Reference } from '../../models';
+import { Actionable, BucketItem, Reference } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
-import { ReferenceSupporTable } from './TemporalTables';
-
-const getLastIndexFirstLevel = <T extends { index: string },>(docs: T[]): number => {
-  const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
-  const [lastIndex] = sortedIndexes;
-  return lastIndex ?? 0;
-}
+import { ActionableTable, ReferenceSupportTable } from './TemporalTables';
+import { getLastIndexFirstLevel } from '../../utils';
 
 type BucketItemProcessListItemProps = {
   doc: BucketItem
@@ -80,7 +75,25 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
               <Button onClick={() => props.processActor.send({ type: 'HAS_ACTION' })}>
                 Some action (I know which one)
               </Button>
-              <Button onClick={() => props.processActor.send({ type: 'IDK_HAS_ACTION' })}>
+              <Button onClick={() => {
+                props.processActor.send({ type: 'IDK_HAS_ACTION' });
+
+                const newItem: Actionable = {
+                  type: 'actionable',
+                };
+
+                ProcessedCRUDService.send({
+                  type: 'CREATE',
+                  doc: {
+                    created: Date.now(),
+                    index: (lastIndex + 1).toString(),
+                    content: props.doc.content,
+                    ...newItem,
+                  }
+                });
+
+                BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              }}>
                 Idk but it has one
               </Button>
             </Space>
@@ -105,13 +118,32 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
       {draftActions && (
         <Space direction='vertical'>
           <Row>
-            Can it be done under two minutes?
+            Take your time to elaborate the action/s. Can it be done under two minutes?
           </Row>
           <Space>
             <Button onClick={() => props.processActor.send({ type: 'TWO_MINUTES' })}>
-              Yes, it can be done ASAP
+              Yes, it can be done ASAP (only for single task)
             </Button>
-            <Button onClick={() => props.processActor.send({ type: 'MORE_THAN_TWO_MINUTES' })}>
+          </Space>
+          <Space>
+            <Button onClick={() => {
+              props.processActor.send({ type: 'MORE_THAN_TWO_MINUTES' })
+              const newItem: Actionable = {
+                type: 'actionable',
+              };
+
+              ProcessedCRUDService.send({
+                type: 'CREATE',
+                doc: {
+                  created: Date.now(),
+                  index: (lastIndex + 1).toString(),
+                  content: props.doc.content,
+                  ...newItem,
+                }
+              });
+
+              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+            }}>
               No, it will take longer
             </Button>
           </Space>
@@ -139,7 +171,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
               const newItem: Reference = {
                 type: 'reference',
                 projects: [],
-              }
+              };
 
               ProcessedCRUDService.send({
                 type: 'CREATE',
@@ -151,7 +183,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                 }
               });
 
-              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id })
+              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
             }}>
               Reference
             </Button>
@@ -250,14 +282,14 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
           renderItem={(doc, i) => (
             <Row style={{ width: '100%' }}>
               <Col span={16}>
-                <BucketItemListItem doc={doc} bucketCRUDService={props.bucketCRUDService} mainColSpan={14} />
+                <BucketItemListItem doc={doc} bucketCRUDService={props.bucketCRUDService} />
               </Col>
               <Col span={8}>
                 <Row style={{ height: '100%' }} >
                   <Divider type='vertical' style={{ height: '100%' }} />
-                  {props.processes.at(i) !== undefined ? (
+                  {props.processes.at(i) !== undefined && (
                     <BucketItemProcessListItem doc={doc} processActor={props.processes.at(i) as any} />
-                  ) : null}
+                  )}
                 </Row>
               </Col>
               <Divider type='horizontal' style={{ margin: '0px', padding: '0px', width: '100%' }} />
@@ -266,15 +298,18 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
         />
       </Col>
       <Col span={8}>
-        <Space direction='vertical'>
-          <Card title='Actionable table (max. 5)'>
-
-          </Card>
-          <ReferenceSupporTable />
-          <Card title='Trash'>
-
-          </Card>
-        </Space>
+        <Row gutter={[0, 16]}>
+          <Col span={24}>
+            <ActionableTable />
+          </Col>
+          <Col span={24}>
+            <ReferenceSupportTable />
+          </Col>
+          <Col span={24}>
+            <Card title='Trash'>
+            </Card>
+          </Col>
+        </Row>
       </Col>
     </Row >
   );

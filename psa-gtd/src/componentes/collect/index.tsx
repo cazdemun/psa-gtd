@@ -6,7 +6,7 @@ import DebugModule from '../debug';
 import { Button, Col, Form, Input, List, Row } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useForm } from 'antd/es/form/Form';
-import { sortByIndex } from '../../utils';
+import { getLastIndexFirstLevel, sortByIndex } from '../../utils';
 import BucketItemListItem from './BucketItem';
 
 type BucketInputProps = {
@@ -58,8 +58,8 @@ type CollectModuleProps = {
 const CollectModule: React.FC<CollectModuleProps> = (props) => {
   const docs = useSelector(props.bucketCRUDService, ({ context }) => context.docs);
   const sortedDocs = docs.slice().sort((a, b) => sortByIndex(a, b));
-  const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
-  const [lastIndex] = sortedIndexes;
+  const lastIndex = getLastIndexFirstLevel(docs);
+
   return (
     <Row gutter={[16, 16]} style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '16px' }}>
       <Col span={6} hidden>
@@ -69,7 +69,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
           newDoc={{
             content: 'New Test\n\n\nNewTest',
             created: Date.now(),
-            index: ((lastIndex ?? 0) + 1).toString(),
+            index: (lastIndex + 1).toString(),
           }}
           updateDoc={(doc) => ({
             content: doc.content === 'New Test' ? 'Modified Test' : 'New Test',
