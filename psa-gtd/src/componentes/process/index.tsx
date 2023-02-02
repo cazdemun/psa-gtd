@@ -1,14 +1,13 @@
 import React, { useContext, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
-import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import { Actionable, BucketItem, Reference } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
-import { ActionableTable, ReferenceSupportTable } from './TemporalTables';
-import { getLastIndexFirstLevel } from '../../utils';
+import { ACTIONABLE_TABLE_LIMIT, ActionableTable, ReferenceSupportTable } from './TemporalTables';
+import { getLastIndexFirstLevel, sortByIndex } from '../../utils';
 
 type BucketItemProcessListItemProps = {
   doc: BucketItem
@@ -266,23 +265,42 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
   );
 };
 
+type ProcessModuleActionableModeProps = {
+}
+
+const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = (props) => {
+  return (
+    <>
+      Holi
+    </>
+  );
+};
+
 type ProcessModuleProps = {
-  bucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>
   processes: ActorRefFrom<typeof creatBucketItemProcessMachine>[]
-  sortedDocs: BucketItem[]
 }
 
 const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
-  return (
+  const { service } = useContext(GlobalServicesContext);
+
+  const BucketCRUDService = useSelector(service, ({ context }) => context.bucketCRUDActor);
+  const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
+  const sortedBucketItems = bucketItems.slice().sort((a, b) => sortByIndex(a, b));
+
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
+
+  const actionableItems = processedItems.filter((doc) => doc.type === 'actionable');
+  return actionableItems.length < ACTIONABLE_TABLE_LIMIT ? (
     <Row gutter={[16, 16]} style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '16px' }}>
       <Col span={16}>
         <List
           bordered
-          dataSource={props.sortedDocs}
+          dataSource={sortedBucketItems}
           renderItem={(doc, i) => (
             <Row style={{ width: '100%' }}>
               <Col span={16}>
-                <BucketItemListItem doc={doc} bucketCRUDService={props.bucketCRUDService} />
+                <BucketItemListItem doc={doc} bucketCRUDService={BucketCRUDService} />
               </Col>
               <Col span={8}>
                 <Row style={{ height: '100%' }} >
@@ -312,6 +330,8 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
         </Row>
       </Col>
     </Row >
+  ) : (
+    <ProcessModuleActionableMode />
   );
 }
 

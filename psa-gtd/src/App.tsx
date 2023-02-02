@@ -35,22 +35,25 @@ function App() {
   const GlobalServices = useInterpret(GlobalServicesMachine);
 
   const BucketCRUDService = useSelector(GlobalServices, ({ context }) => context.bucketCRUDActor);
-  const docs = useSelector(BucketCRUDService, ({ context }) => context.docs);
+  const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
 
   const ProcessesService = useInterpret(bucketItemsProcessesService);
   const processes = useSelector(ProcessesService, ({ context }) => context.processes)
 
   useEffect(() => {
-    console.log('test');
-    const sortedDocs = docs.slice().sort((a, b) => sortByIndex(a, b));
-    ProcessesService.send({ type: 'SPAWN_MACHINES', docs: sortedDocs });
-  }, [ProcessesService, docs])
+    const sortedBucketItems = bucketItems.slice().sort((a, b) => sortByIndex(a, b));
+    ProcessesService.send({ type: 'SPAWN_MACHINES', docs: sortedBucketItems });
+  }, [ProcessesService, bucketItems])
 
   return (
     <GlobalServicesContext.Provider value={{ service: GlobalServices }}>
-      <Menu onClick={(e) => setPath(e.key as Path)} selectedKeys={[path]} mode="horizontal" items={items(docs.length)} />
+      <Menu
+        onClick={(e) => setPath(e.key as Path)} selectedKeys={[path]}
+        mode="horizontal"
+        items={items(bucketItems.length)}
+      />
       {path === 'collect' && (<CollectModule bucketCRUDService={BucketCRUDService} />)}
-      {path === 'process' && (<ProcessModule bucketCRUDService={BucketCRUDService} sortedDocs={docs.slice().sort((a, b) => sortByIndex(a, b))} processes={processes} />)}
+      {path === 'process' && (<ProcessModule processes={processes} />)}
     </GlobalServicesContext.Provider>
   );
 }

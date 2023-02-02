@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { BucketCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
-import { Button, Col, Form, Input, List, Row, Space, Typography } from 'antd';
+import { Button, Col, Form, Input, List, Row, Space } from 'antd';
 import { BuildFilled, BuildOutlined, DeleteOutlined, EditFilled, EditOutlined, SaveOutlined, ScissorOutlined } from '@ant-design/icons';
 import { multiSlice } from '../../utils';
 

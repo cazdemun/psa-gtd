@@ -8,7 +8,7 @@ import { BucketItem } from '../../models';
 import { OptionalId } from '../../lib/Repository';
 import { getLastIndexFirstLevel } from '../../utils';
 
-const ACTIONABLE_TABLE_LIMIT = 5;
+export const ACTIONABLE_TABLE_LIMIT = 5;
 
 type ActionableTableProps = {
 }
