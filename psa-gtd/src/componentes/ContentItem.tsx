@@ -10,18 +10,18 @@ const TEXT_COL = 22;
 type BucketItemLineProps = {
   lineNumber: number
   text: string
-  unlined?: boolean
+  hideLineNumber?: boolean
 }
 
 const BucketItemLine: React.FC<BucketItemLineProps> = (props) => {
   return (
     <>
-      <Col span={props.unlined ? 0 : LINE_COL}>
+      <Col span={props.hideLineNumber ? 0 : LINE_COL}>
         <Row justify='end'>
           <Typography.Text>{props.lineNumber}</Typography.Text>
         </Row>
       </Col>
-      <Col span={props.unlined ? 24 : TEXT_COL}>
+      <Col span={props.hideLineNumber ? 24 : TEXT_COL}>
         {props.text !== '' ? (
           <pre style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word', margin: '0px' }}>{props.text}</pre>
         ) : (
@@ -68,7 +68,7 @@ const LongCheckBox: React.FC<LongCheckBoxProps> = (props) => {
 
 type ItemContentProps<T extends { content: string }> = {
   doc: T
-  unlined?: boolean
+  hideLineNumber?: boolean
   editable?: boolean
   form?: FormInstance<Record<number, boolean>>
 }
@@ -80,10 +80,10 @@ const ItemContent = <T extends { content: string }>(props: ItemContentProps<T>) 
       <Col span={24}>
         {lines.map((text, i) => (
           <Row gutter={[16, 0]} key={i.toString()}>
-            <BucketItemLine lineNumber={i + 1} text={text} unlined={props.unlined} />
+            <BucketItemLine lineNumber={i + 1} text={text} hideLineNumber={props.hideLineNumber} />
             {(
               props.editable // Used for BucketItemSlice
-              && i !== (lines.length - 1) // Last line shouldn't be able to slice
+              && i !== (lines.length - 1) // Last line shouldn't be able to be sliced
               && props.form !== undefined // With this we can use useWatch safely
             ) && (
                 <LongCheckBox

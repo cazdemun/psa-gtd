@@ -3,18 +3,17 @@ import { Button, Card, List, Space } from "antd";
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import ItemContent from '../ContentItem';
-import { DeleteOutlined, RollbackOutlined } from '@ant-design/icons';
+import { DeleteOutlined, RollbackOutlined, SwapLeftOutlined } from '@ant-design/icons';
 import { BucketItem } from '../../models';
 import { OptionalId } from '../../lib/Repository';
-import { getLastIndexFirstLevel } from '../../utils';
-
-export const ACTIONABLE_TABLE_LIMIT = 5;
+import { getLastIndexFirstLevel, sortByIndex } from '../../utils';
 
 type ActionableTableProps = {
+  goToActionableMode: (...args: any[]) => any
 }
 
 export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
-  const { service } = useContext(GlobalServicesContext);
+  const { service, globalConfig } = useContext(GlobalServicesContext);
 
   const BucketCRUDService = useSelector(service, ({ context }) => context.bucketCRUDActor);
   const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
@@ -23,12 +22,24 @@ export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
   const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
 
   const actionableItems = processedItems.filter((doc) => doc.type === 'actionable');
+  const sortedActionableItems = actionableItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const lastIndexBucketItems = getLastIndexFirstLevel(bucketItems);
   return (
-    <Card title={`Actionable table (max. ${ACTIONABLE_TABLE_LIMIT})`} bodyStyle={{ padding: '0px 0px 12px 0px' }}>
+    <Card
+      title={`Actionable table (max. ${globalConfig.actionableTableLimit})`}
+      bodyStyle={{ padding: '0px 0px 12px 0px' }}
+      extra={(
+        <Space align='start'>
+          <Button 
+            icon={<SwapLeftOutlined />}
+            onClick={props.goToActionableMode}
+          />
+        </Space>
+      )}
+    >
       <List
-        dataSource={actionableItems}
+        dataSource={sortedActionableItems}
         renderItem={(processedItem) => (
           <List.Item
             style={{ alignItems: 'start' }}
@@ -60,7 +71,7 @@ export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
               </Space>
             )}
           >
-            <ItemContent doc={processedItem} unlined />
+            <ItemContent doc={processedItem} hideLineNumber />
           </List.Item>
         )
         }
