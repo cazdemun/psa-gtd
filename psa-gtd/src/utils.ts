@@ -1,3 +1,5 @@
+import { NewDoc } from './lib/Repository';
+import { BucketItem, Reference, Support } from './models';
 export const trace = <T>(x: T): T => {
   console.log(x);
   return x;
@@ -41,4 +43,46 @@ export const getLastIndexFirstLevel = <T extends { index: string }>(docs: T[]): 
   const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
   const [lastIndex] = sortedIndexes;
   return lastIndex ?? 0;
+}
+
+// // Most references would be bookmarks, but some of them could be files like plain text or pdfs
+// export type Reference = {
+//   type: 'reference'
+//   title?: string
+//   path?: string // only for file:\\\ 
+//   projects: string[]
+// }
+
+// // Support files are actually files, or at least should be, most of them
+// export type Support = {
+//   type: 'support'
+//   title?: string
+//   path?: string // only for file:\\\ 
+//   projects: string[]
+// }
+
+export const rollbackReferenceItem = (reference: Reference, index: string): NewDoc<BucketItem> => {
+  const content = `Title: ${reference.title ?? ''}\n` +
+    `Proyects: ${reference.projects.join(" ")}\n` +
+    `Path: ${reference.path ?? ''}\n\n` +
+    `${reference.content}`;
+
+  return {
+    content,
+    created: Date.now(),
+    index,
+  };
+}
+
+export const rollbackSupportItem = (reference: Support, index: string): NewDoc<BucketItem> => {
+  const content = `Title: ${reference.title ?? ''}\n` +
+    `Proyects: ${reference.projects.join(" ")}\n` +
+    `Path: ${reference.path ?? ''}\n\n` +
+    `${reference.content}`;
+
+  return {
+    content,
+    created: Date.now(),
+    index,
+  };
 }

@@ -6,7 +6,9 @@ export type BaseDoc = { _id: string }
 export type OptionalProperty<T, U extends keyof T> = Omit<T, U> & { [P in U]?: T[U] }
 export type RequiredPropertyInPartial<T, U extends keyof T> = Partial<Omit<T, U>> & { [P in U]: T[U] }
 
-export type OptionalId<T extends BaseDoc> = OptionalProperty<T, '_id'>
+// export type OptionalId<T extends BaseDoc> = OptionalProperty<T, '_id'>
+export type OptionalId<T extends BaseDoc> = Omit<T, '_id'> & { _id?: string }
+export type NewDoc<T extends BaseDoc> = OptionalId<T>
 
 export type PartialWithId<T extends BaseDoc> = RequiredPropertyInPartial<T, '_id'>
 

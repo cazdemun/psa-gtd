@@ -15,53 +15,57 @@ export type BaseProcessedItem = {
   content: string,
 }
 
-export type Trash = {
+export type Trash = (BaseDoc & BaseProcessedItem) & {
   type: 'trash'
   item: ProcessedItem | BucketItem
 }
 
-export type Someday = {
+export type Someday = (BaseDoc & BaseProcessedItem) & {
   type: 'someday'
   item: ProcessedItem | BucketItem
 }
 
-export type Reference = {
+// Most references would be bookmarks, but some of them could be files like plain text or pdfs
+export type Reference = (BaseDoc & BaseProcessedItem) & {
   type: 'reference'
   title?: string
   path?: string // only for file:\\\ 
   projects: string[]
 }
 
-export type Support = {
+// Support files are actually files, or at least should be, most of them
+export type Support = (BaseDoc & BaseProcessedItem) & {
   type: 'support'
   title?: string
-  projects?: string[]
-  path?: string
+  path?: string // only for file:\\\ 
+  projects: string[]
 }
 
-export type Actionable = {
+export type Actionable = (BaseDoc & BaseProcessedItem) & {
   type: 'actionable'
 }
 
-export type Action = {
+export type Action = (BaseDoc & BaseProcessedItem) & {
   type: 'action'
   delegate?: boolean
-  scheduled?: number
+  deadline?: number
   finished?: number
+  modified: number
 }
 
-export type Project = {
+export type Project = (BaseDoc & BaseProcessedItem) & {
   type: 'project'
-  actions: (Action | Project)[]
+  actions: string[] // (Action | Project)[]
   finished?: number
+  modified: number
+  // wastelandsSupportFiles: string[] path of files (I think is best to just create a reference/support file when analizing the explorer)
+  // wastelandsReferenceFiles: string[] path of files
 }
 
-export type ProcessedItem = (BaseDoc & BaseProcessedItem)
-  & (
-    | Trash | Someday
-    | Reference | Support
-    | Project | Actionable | Action
-  )
+export type ProcessedItem =
+  | Trash | Someday
+  | Reference | Support
+  | Project | Actionable | Action
 
 // export type ProcessedItem = (
 //   | Trash | Someday

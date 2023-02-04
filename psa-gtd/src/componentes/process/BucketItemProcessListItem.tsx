@@ -2,10 +2,11 @@ import React, { useContext, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { ActorRefFrom } from 'xstate';
 import { Button, Col, Row, Space } from 'antd';
-import { Actionable, BucketItem, Reference } from '../../models';
+import { Actionable, BucketItem, Reference, Someday, Support, Trash } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { getLastIndexFirstLevel } from '../../utils';
+import { NewDoc } from '../../lib/Repository';
 
 type BucketItemProcessListItemProps = {
   doc: BucketItem
@@ -51,12 +52,48 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
             <Button onClick={() => props.processActor.send({ type: 'QUARTERLY' })}>
               Yes, absolutely
             </Button>
-            <Button onClick={() => props.processActor.send({ type: 'NOT_QUARTERLY' })}>
+            <Button
+              onClick={() => {
+                props.processActor.send({ type: 'NOT_QUARTERLY' });
+
+                const newItem: NewDoc<Someday> = {
+                  type: 'someday',
+                  item: props.doc,
+                  created: Date.now(),
+                  index: (lastIndex + 1).toString(),
+                  content: props.doc.content,
+                };
+
+                ProcessedCRUDService.send({
+                  type: 'CREATE',
+                  doc: newItem,
+                });
+
+                BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              }}
+            >
               No, not really
             </Button>
           </Space>
           <Space>
-            <Button onClick={() => props.processActor.send({ type: 'TRASH' })}>
+            <Button onClick={() => {
+              props.processActor.send({ type: 'TRASH' });
+
+              const newItem: NewDoc<Trash> = {
+                type: 'trash',
+                item: props.doc,
+                created: Date.now(),
+                index: (lastIndex + 1).toString(),
+                content: props.doc.content,
+              };
+
+              ProcessedCRUDService.send({
+                type: 'CREATE',
+                doc: newItem,
+              });
+
+              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+            }}>
               Trash
             </Button>
           </Space>
@@ -75,18 +112,16 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
               <Button onClick={() => {
                 props.processActor.send({ type: 'IDK_HAS_ACTION' });
 
-                const newItem: Actionable = {
+                const newItem: NewDoc<Actionable> = {
                   type: 'actionable',
+                  created: Date.now(),
+                  index: (lastIndex + 1).toString(),
+                  content: props.doc.content,
                 };
 
                 ProcessedCRUDService.send({
                   type: 'CREATE',
-                  doc: {
-                    created: Date.now(),
-                    index: (lastIndex + 1).toString(),
-                    content: props.doc.content,
-                    ...newItem,
-                  }
+                  doc: newItem,
                 });
 
                 BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
@@ -125,18 +160,17 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
           <Space>
             <Button onClick={() => {
               props.processActor.send({ type: 'MORE_THAN_TWO_MINUTES' })
-              const newItem: Actionable = {
+
+              const newItem: NewDoc<Actionable> = {
                 type: 'actionable',
+                created: Date.now(),
+                index: (lastIndex + 1).toString(),
+                content: props.doc.content,
               };
 
               ProcessedCRUDService.send({
                 type: 'CREATE',
-                doc: {
-                  created: Date.now(),
-                  index: (lastIndex + 1).toString(),
-                  content: props.doc.content,
-                  ...newItem,
-                }
+                doc: newItem,
               });
 
               BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
@@ -165,26 +199,41 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
             <Button onClick={() => {
               props.processActor.send({ type: 'REFERENCE' });
 
-              const newItem: Reference = {
+              const newItem: NewDoc<Reference> = {
                 type: 'reference',
                 projects: [],
+                created: Date.now(),
+                index: (lastIndex + 1).toString(),
+                content: props.doc.content,
               };
 
               ProcessedCRUDService.send({
                 type: 'CREATE',
-                doc: {
-                  created: Date.now(),
-                  index: (lastIndex + 1).toString(),
-                  content: props.doc.content,
-                  ...newItem,
-                }
+                doc: newItem,
               });
 
               BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
             }}>
               Reference
             </Button>
-            <Button onClick={() => props.processActor.send({ type: 'SUPPORT' })}>
+            <Button onClick={() => {
+              props.processActor.send({ type: 'SUPPORT' });
+
+              const newItem: NewDoc<Support> = {
+                type: 'support',
+                projects: [],
+                created: Date.now(),
+                index: (lastIndex + 1).toString(),
+                content: props.doc.content,
+              };
+
+              ProcessedCRUDService.send({
+                type: 'CREATE',
+                doc: newItem,
+              });
+
+              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+            }}>
               Support
             </Button>
           </Space>

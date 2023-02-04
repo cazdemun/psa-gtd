@@ -5,7 +5,7 @@ import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
-import { ActionableTable, ReferenceSupportTable } from './TemporalTables';
+import { ActionableTable, ReferenceSupportTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
 import { sortByIndex } from '../../utils';
 import ItemContent from '../ContentItem';
 import { DeleteOutlined, SwapRightOutlined } from '@ant-design/icons';
@@ -135,8 +135,10 @@ const ProcessModule: React.FC<ProcessModuleProps> = (props) => {
             <ReferenceSupportTable />
           </Col>
           <Col span={24}>
-            <Card title='Trash'>
-            </Card>
+            <SomedayMaybeTable />
+          </Col>
+          <Col span={24}>
+            <TrashTable />
           </Col>
         </Row>
       </Col>
