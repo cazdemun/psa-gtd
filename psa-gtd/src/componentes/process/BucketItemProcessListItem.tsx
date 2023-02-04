@@ -2,11 +2,25 @@ import React, { useContext, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { ActorRefFrom } from 'xstate';
 import { Button, Col, Row, Space } from 'antd';
-import { Actionable, BucketItem, Reference, Someday, Support, Trash } from '../../models';
+import { Actionable, BucketItem, ProcessedItem, Reference, Someday, Support, Trash } from '../../models';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { getLastIndexFirstLevel } from '../../utils';
 import { NewDoc } from '../../lib/Repository';
+import { BucketCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
+
+const createProcessedItem = <T extends ProcessedItem>(
+  oldBucketItem: BucketItem, newDoc: NewDoc<T>,
+  BucketCRUDService: ActorRefFrom<BucketCRUDStateMachine>,
+  ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>
+) => {
+  ProcessedCRUDService.send({
+    type: 'CREATE',
+    doc: newDoc,
+  });
+
+  BucketCRUDService.send({ type: 'DELETE', _id: oldBucketItem._id });
+}
 
 type BucketItemProcessListItemProps = {
   doc: BucketItem
@@ -64,12 +78,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                   content: props.doc.content,
                 };
 
-                ProcessedCRUDService.send({
-                  type: 'CREATE',
-                  doc: newItem,
-                });
-
-                BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+                createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
               }}
             >
               No, not really
@@ -87,12 +96,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                 content: props.doc.content,
               };
 
-              ProcessedCRUDService.send({
-                type: 'CREATE',
-                doc: newItem,
-              });
-
-              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
             }}>
               Trash
             </Button>
@@ -119,12 +123,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                   content: props.doc.content,
                 };
 
-                ProcessedCRUDService.send({
-                  type: 'CREATE',
-                  doc: newItem,
-                });
-
-                BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+                createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
               }}>
                 Idk but it has one
               </Button>
@@ -168,12 +167,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                 content: props.doc.content,
               };
 
-              ProcessedCRUDService.send({
-                type: 'CREATE',
-                doc: newItem,
-              });
-
-              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
             }}>
               No, it will take longer
             </Button>
@@ -207,12 +201,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                 content: props.doc.content,
               };
 
-              ProcessedCRUDService.send({
-                type: 'CREATE',
-                doc: newItem,
-              });
-
-              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
             }}>
               Reference
             </Button>
@@ -227,12 +216,7 @@ const BucketItemProcessListItem: React.FC<BucketItemProcessListItemProps> = (pro
                 content: props.doc.content,
               };
 
-              ProcessedCRUDService.send({
-                type: 'CREATE',
-                doc: newItem,
-              });
-
-              BucketCRUDService.send({ type: 'DELETE', _id: props.doc._id });
+              createProcessedItem(props.doc, newItem, BucketCRUDService, ProcessedCRUDService);
             }}>
               Support
             </Button>

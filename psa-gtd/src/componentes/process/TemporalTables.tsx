@@ -8,6 +8,66 @@ import { Actionable, BucketItem, ProcessedItem, Reference, Someday, Support, Tra
 import { NewDoc } from '../../lib/Repository';
 import { getLastIndexFirstLevel, rollbackReferenceItem, rollbackSupportItem, sortByIndex } from '../../utils';
 
+
+type GenericTableProps<T extends ProcessedItem> = {
+  title: string
+  cardDescription?: React.ReactNode
+  cardExtra?: React.ReactNode
+  filter: (doc: ProcessedItem) => doc is T
+  onRollback: (oldDoc: T) => any
+  renderItem: (oldDoc: T) => React.ReactNode
+}
+
+const GenericTable = <T extends ProcessedItem>(props: GenericTableProps<T>) => {
+  const { service } = useContext(GlobalServicesContext);
+
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const genericProcessedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
+
+  const filteredItems = genericProcessedItems.filter(props.filter);
+  const sortedFilteredItems = filteredItems.slice().sort((a, b) => sortByIndex(a, b));
+
+  return (
+    <Card
+      title={props.title}
+      bodyStyle={{ padding: '0px 0px 12px 0px' }}
+      extra={(
+        <Space align='start'>
+          {props.cardExtra}
+        </Space>
+      )}
+    >
+      {props.cardDescription}
+      <List
+        dataSource={sortedFilteredItems}
+        renderItem={(processedItem) => (
+          <List.Item
+            style={{ alignItems: 'start' }}
+            extra={(
+              <Space align='start'>
+                <Space direction='vertical'>
+                  <Button
+                    icon={<RollbackOutlined />}
+                    onClick={() => props.onRollback(processedItem)}
+                  />
+                  <Button
+                    icon={<DeleteOutlined />}
+                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
+                  />
+                </Space>
+              </Space>
+            )}
+          >
+            {props.renderItem(processedItem)}
+          </List.Item>
+        )
+        }
+        pagination={{ pageSize: 10 }}
+      />
+    </Card >
+  );
+};
+
 type ActionableTableProps = {
   goToActionableMode: (...args: any[]) => any
 }
@@ -19,65 +79,34 @@ export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
   const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
-
-  const actionableItems = processedItems.filter((doc): doc is Actionable => doc.type === 'actionable');
-  const sortedActionableItems = actionableItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const lastIndexBucketItems = getLastIndexFirstLevel(bucketItems);
   return (
-    <Card
+    <GenericTable<Actionable>
       title={`Actionable table (max. ${globalConfig.actionableTableLimit})`}
-      bodyStyle={{ padding: '0px 0px 12px 0px' }}
-      extra={(
-        <Space align='start'>
-          <Button
-            icon={<SwapLeftOutlined />}
-            onClick={props.goToActionableMode}
-          />
-        </Space>
+      filter={(doc): doc is Actionable => doc.type === 'actionable'}
+      cardExtra={(
+        <Button
+          icon={<SwapLeftOutlined />}
+          onClick={props.goToActionableMode}
+        />
       )}
-    >
-      <List
-        dataSource={sortedActionableItems}
-        renderItem={(processedItem) => (
-          <List.Item
-            style={{ alignItems: 'start' }}
-            extra={(
-              <Space align='start'>
-                <Space direction='vertical'>
-                  <Button
-                    icon={<RollbackOutlined />}
-                    onClick={() => {
-                      const newItem: NewDoc<BucketItem> = {
-                        content: processedItem.content,
-                        created: Date.now(),
-                        index: (lastIndexBucketItems + 1).toString(),
-                      };
+      onRollback={(processedItem) => {
+        const newItem: NewDoc<BucketItem> = {
+          content: processedItem.content,
+          created: Date.now(),
+          index: (lastIndexBucketItems + 1).toString(),
+        };
 
-                      BucketCRUDService.send({
-                        type: 'CREATE',
-                        doc: newItem,
-                      });
+        BucketCRUDService.send({
+          type: 'CREATE',
+          doc: newItem,
+        });
 
-                      ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                    }}
-                  />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
-                  />
-                </Space>
-              </Space>
-            )}
-          >
-            <ItemContent doc={processedItem} hideLineNumber />
-          </List.Item>
-        )
-        }
-        pagination={{ pageSize: 10 }}
-      />
-    </Card >
+        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+      }}
+      renderItem={(processedItem) => <ItemContent doc={processedItem} hideLineNumber />}
+    />
   );
 };
 
@@ -91,61 +120,41 @@ export const ReferenceSupportTable: React.FC<ReferenceSupportTableProps> = (prop
   const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
-
-  const refSupItems = processedItems.filter((doc): doc is Support | Reference => doc.type === 'reference' || doc.type === 'support');
-  const sortedRefSupItems = refSupItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const lastIndexBucketItems = getLastIndexFirstLevel(bucketItems);
   return (
-    <Card title='Reference/Support table (max. TBD)' bodyStyle={{ padding: '0px 0px 12px 0px' }}>
-      <p style={{ padding: '12px 24px 0px 24px', margin: '0px' }}>
-        This is a table because as a reference it needs to be put into a category and maybe linked to a project, and as a support material needs to be necessary linked to a project that may not be even exists yet.
-      </p>
-      <List
-        dataSource={sortedRefSupItems}
-        renderItem={(processedItem) => (
-          <List.Item
-            style={{ alignItems: 'start' }}
-            extra={(
-              <Space align='start'>
-                <Space direction='vertical'>
-                  <Button
-                    icon={<RollbackOutlined />}
-                    onClick={() => {
-                      if (processedItem.type === 'reference') {
-                        BucketCRUDService.send({
-                          type: 'CREATE',
-                          doc: rollbackReferenceItem(processedItem, (lastIndexBucketItems + 1).toString()),
-                        });
+    <GenericTable<Support | Reference>
+      title='Reference/Support table (max. TBD)'
+      filter={(doc): doc is Support | Reference => doc.type === 'reference' || doc.type === 'support'}
+      cardDescription={(
+        <p style={{ padding: '12px 24px 0px 24px', margin: '0px' }}>
+          This is a table because as a reference it needs to be put into a category and maybe linked to a project, and as a support material needs to be necessary linked to a project that may not be even exists yet.
+        </p>
+      )}
+      onRollback={(processedItem) => {
+        if (processedItem.type === 'reference') {
+          BucketCRUDService.send({
+            type: 'CREATE',
+            doc: rollbackReferenceItem(processedItem, (lastIndexBucketItems + 1).toString()),
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      }
-                      if (processedItem.type === 'support') {
-                        BucketCRUDService.send({
-                          type: 'CREATE',
-                          doc: rollbackSupportItem(processedItem, (lastIndexBucketItems + 1).toString()),
-                        });
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        }
+        if (processedItem.type === 'support') {
+          BucketCRUDService.send({
+            type: 'CREATE',
+            doc: rollbackSupportItem(processedItem, (lastIndexBucketItems + 1).toString()),
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      }
-                    }}
-                  />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
-                  />
-                </Space>
-              </Space>
-            )}
-          >
-            <pre>
-              {JSON.stringify(processedItem, null, 2)}
-            </pre>
-          </List.Item>
-        )}
-      />
-    </Card >
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        }
+      }}
+      renderItem={(processedItem) => (
+        <pre>
+          {JSON.stringify(processedItem, null, 2)}
+        </pre>
+      )}
+    />
   );
 };
 
@@ -159,68 +168,46 @@ export const SomedayMaybeTable: React.FC<SomedayMaybeTableProps> = (props) => {
   const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
-
-  const somedayMaybeItems = processedItems.filter((doc): doc is Someday => doc.type === 'someday');
-  const sortedSomedayMaybeItems = somedayMaybeItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const lastIndexBucketItems = getLastIndexFirstLevel(bucketItems);
   return (
-    <Card title='Someday/Maybe table (max. TBD)' bodyStyle={{ padding: '0px 0px 12px 0px' }}>
-      <List
-        dataSource={sortedSomedayMaybeItems}
-        renderItem={(processedItem) => (
-          <List.Item
-            style={{ alignItems: 'start' }}
-            extra={(
-              <Space align='start'>
-                <Space direction='vertical'>
-                  <Button
-                    icon={<RollbackOutlined />}
-                    onClick={() => {
-                      if (Object.hasOwn(processedItem.item, 'type')) {
-                        const { _id, ...item } = processedItem.item as ProcessedItem;
+    <GenericTable<Someday>
+      title='Someday/Maybe table (max. TBD)'
+      filter={(doc): doc is Someday => doc.type === 'someday'}
+      onRollback={(processedItem) => {
+        if (Object.hasOwn(processedItem.item, 'type')) {
+          const { _id, ...item } = processedItem.item as ProcessedItem;
 
-                        ProcessedCRUDService.send({
-                          type: 'CREATE',
-                          doc: {
-                            ...item,
-                            index: (lastIndexBucketItems + 1).toString(),
-                            created: Date.now(),
-                          },
-                        });
+          ProcessedCRUDService.send({
+            type: 'CREATE',
+            doc: {
+              ...item,
+              index: (lastIndexBucketItems + 1).toString(),
+              created: Date.now(),
+            },
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      } else {
-                        const { _id, ...item } = processedItem.item as BucketItem;
-                        BucketCRUDService.send({
-                          type: 'CREATE',
-                          doc: {
-                            ...item,
-                            index: (lastIndexBucketItems + 1).toString(),
-                            created: Date.now(),
-                          },
-                        });
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        } else {
+          const { _id, ...item } = processedItem.item as BucketItem;
+          BucketCRUDService.send({
+            type: 'CREATE',
+            doc: {
+              ...item,
+              index: (lastIndexBucketItems + 1).toString(),
+              created: Date.now(),
+            },
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      }
-                    }}
-                  />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
-                  />
-                </Space>
-              </Space>
-            )}
-          >
-            <pre>
-              {JSON.stringify(processedItem, null, 2)}
-            </pre>
-          </List.Item>
-        )}
-      />
-    </Card >
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        }
+      }}
+      renderItem={(processedItem) => (
+        <pre>
+          {JSON.stringify(processedItem, null, 2)}
+        </pre>
+      )}
+    />
   );
 };
 
@@ -234,67 +221,45 @@ export const TrashTable: React.FC<TrashTableProps> = (props) => {
   const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
-
-  const trashItems = processedItems.filter((doc): doc is Trash => doc.type === 'trash');
-  const sortedTrashItems = trashItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const lastIndexBucketItems = getLastIndexFirstLevel(bucketItems);
   return (
-    <Card title='Trash table' bodyStyle={{ padding: '0px 0px 12px 0px' }}>
-      <List
-        dataSource={sortedTrashItems}
-        renderItem={(processedItem) => (
-          <List.Item
-            style={{ alignItems: 'start' }}
-            extra={(
-              <Space align='start'>
-                <Space direction='vertical'>
-                  <Button
-                    icon={<RollbackOutlined />}
-                    onClick={() => {
-                      if (Object.hasOwn(processedItem.item, 'type')) {
-                        const { _id, ...item } = processedItem.item as ProcessedItem;
+    <GenericTable<Trash>
+      title='Trash table'
+      filter={(doc): doc is Trash => doc.type === 'trash'}
+      onRollback={(processedItem) => {
+        if (Object.hasOwn(processedItem.item, 'type')) {
+          const { _id, ...item } = processedItem.item as ProcessedItem;
 
-                        ProcessedCRUDService.send({
-                          type: 'CREATE',
-                          doc: {
-                            ...item,
-                            index: (lastIndexBucketItems + 1).toString(),
-                            created: Date.now(),
-                          },
-                        });
+          ProcessedCRUDService.send({
+            type: 'CREATE',
+            doc: {
+              ...item,
+              index: (lastIndexBucketItems + 1).toString(),
+              created: Date.now(),
+            },
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      } else {
-                        const { _id, ...item } = processedItem.item as BucketItem;
-                        BucketCRUDService.send({
-                          type: 'CREATE',
-                          doc: {
-                            ...item,
-                            index: (lastIndexBucketItems + 1).toString(),
-                            created: Date.now(),
-                          },
-                        });
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        } else {
+          const { _id, ...item } = processedItem.item as BucketItem;
+          BucketCRUDService.send({
+            type: 'CREATE',
+            doc: {
+              ...item,
+              index: (lastIndexBucketItems + 1).toString(),
+              created: Date.now(),
+            },
+          });
 
-                        ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
-                      }
-                    }}
-                  />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
-                  />
-                </Space>
-              </Space>
-            )}
-          >
-            <pre>
-              {JSON.stringify(processedItem, null, 2)}
-            </pre>
-          </List.Item>
-        )}
-      />
-    </Card >
+          ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
+        }
+      }}
+      renderItem={(processedItem) => (
+        <pre>
+          {JSON.stringify(processedItem, null, 2)}
+        </pre>
+      )}
+    />
   );
 };
