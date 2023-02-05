@@ -3,7 +3,7 @@ import { useInterpret, useSelector } from '@xstate/react';
 import GlobalServicesMachine from './machines/GlobalServicesMachine';
 import CollectModule from './componentes/collect';
 import { Col, Divider, Menu, MenuProps, Row, Space, Switch } from 'antd';
-import { EyeOutlined, FireOutlined } from '@ant-design/icons';
+import { CoffeeOutlined, EyeOutlined, FilterOutlined, FireOutlined, FolderOutlined, FundProjectionScreenOutlined } from '@ant-design/icons';
 import ProcessModule from './componentes/process';
 import bucketItemsProcessesService from './machines/bucketItemsProcessesServices';
 import { sortByIndex } from './utils';
@@ -11,7 +11,11 @@ import GlobalServicesContext, { GlobalConfig } from './componentes/context/Globa
 
 const paths = [
   'collect',
-  'process'
+  'process',
+  'actions',
+  'others',
+  'review',
+  'do',
 ] as const;
 
 type Path = typeof paths[number];
@@ -27,6 +31,26 @@ const items: (items: number) => MenuProps['items'] = (items) => [
   {
     label: `Process / Organize (${items})`,
     key: 'process',
+    icon: <FilterOutlined />,
+  },
+  {
+    label: `Actions / Projects`,
+    key: 'actions',
+    icon: <CoffeeOutlined />,
+  },
+  {
+    label: `Reference / Support / Maybe`,
+    key: 'others',
+    icon: <FolderOutlined />,
+  },
+  {
+    label: `Review (show here maybe)`,
+    key: 'review',
+    icon: <FundProjectionScreenOutlined />,
+  },
+  {
+    label: `Do`,
+    key: 'do',
     icon: <FireOutlined />,
   },
 ];
