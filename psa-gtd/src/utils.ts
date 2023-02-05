@@ -1,4 +1,6 @@
-import { NewDoc } from './lib/Repository';
+import { ActorRefFrom } from 'xstate';
+import { NotLazyCRUDStateMachine } from './lib/CRUDMachine';
+import { BaseDoc, NewDoc } from './lib/Repository';
 import { BucketItem, Reference, Support } from './models';
 export const trace = <T>(x: T): T => {
   console.log(x);
@@ -86,3 +88,9 @@ export const rollbackSupportItem = (reference: Support, index: string): NewDoc<B
     index,
   };
 }
+
+export const deleteItemWithConfirm = <T extends BaseDoc>(crudService: ActorRefFrom<NotLazyCRUDStateMachine<T>>, _id: string,) => {
+  if (window.confirm('Do you really want to delete this item? There is no coming back')) {
+    crudService.send({ type: 'DELETE', _id })
+  }
+};

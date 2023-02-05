@@ -236,5 +236,6 @@ export const createCRUDMachine = <T extends BaseDoc, U extends string | Repo<T> 
 };
 
 export type CRUDStateMachine = typeof _createCRUDMachine;
+export type NotLazyCRUDStateMachine<T extends BaseDoc> = ReturnType<typeof _createCRUDMachine<T>>;
 
 export default createCRUDMachine;

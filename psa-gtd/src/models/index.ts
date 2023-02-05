@@ -48,7 +48,10 @@ export type Actionable = (BaseDoc & BaseProcessedItem) & {
 export type Action = (BaseDoc & BaseProcessedItem) & {
   type: 'action'
   delegate?: boolean
-  deadline?: number
+  scheduled?: {
+    start: number
+    deadline: number
+  }
   finished?: number
   modified: number
 }
@@ -66,6 +69,17 @@ export type ProcessedItem =
   | Trash | Someday
   | Reference | Support
   | Project | Actionable | Action
+
+// This type is for custom categories on the do panel
+// Examples:
+// To do (3 work / 1 something else)
+export type DoCategory = BaseDoc & {
+  title: string  
+  created: number
+  index: string
+  description: string
+  actions: string[] // actions and projects
+}
 
 // export type ProcessedItem = (
 //   | Trash | Someday

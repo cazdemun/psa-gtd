@@ -1,15 +1,16 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { useSelector } from '@xstate/react';
 import { ActorRefFrom } from 'xstate';
-import { Button, Card, Col, Divider, List, Row, Space } from 'antd';
+import { Button, Card, Col, Divider, List, Modal, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { ActionableTable, ReferenceSupportTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
-import { sortByIndex } from '../../utils';
+import { deleteItemWithConfirm, sortByIndex } from '../../utils';
 import ItemContent from '../ContentItem';
-import { DeleteOutlined, SwapRightOutlined } from '@ant-design/icons';
+import { DeleteOutlined, FormOutlined, SwapRightOutlined } from '@ant-design/icons';
 import BucketItemProcessListItem from './BucketItemProcessListItem';
+import { Actionable } from '../../models';
 
 type ProcessModuleActionableModeProps = {
   goToNormalMode: (...args: any[]) => any
@@ -18,6 +19,9 @@ type ProcessModuleActionableModeProps = {
 const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = (props) => {
   const { service } = useContext(GlobalServicesContext);
 
+  const [state, setState] = useState<'normal' | 'edit'>('normal');
+  const [actionableToProcess, setActionableToProcess] = useState<Actionable | undefined>(undefined);
+
   // const BucketCRUDService = useSelector(service, ({ context }) => context.bucketCRUDActor);
   // const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
   // const sortedBucketItems = bucketItems.slice().sort((a, b) => sortByIndex(a, b));
@@ -25,52 +29,79 @@ const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
 
-  const actionableItems = processedItems.filter((doc) => doc.type === 'actionable');
+  const actionableItems = processedItems.filter((doc): doc is Actionable => doc.type === 'actionable');
   const sortedActionableItems = actionableItems.slice().sort((a, b) => sortByIndex(a, b));
 
   return (
-    <Row gutter={[16, 16]} style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '16px' }}>
-      <Col span={16}>
-        <List
-          header={(
-            <Row justify='end'>
-              <Button
-                icon={<SwapRightOutlined />}
-                onClick={props.goToNormalMode}
-              />
-            </Row>
-          )}
-          bordered
-          dataSource={sortedActionableItems}
-          renderItem={(doc) => (
-            <List.Item
-              style={{ width: '100%', alignItems: 'start' }}
-              extra={(
-                <Space align='start'>
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: doc._id, })}
-                  />
-                </Space>
-              )}
-            >
-              <ItemContent doc={doc} />
-            </List.Item>
-          )}
-        />
-      </Col>
-      <Col span={8}>
-        <Row gutter={[0, 16]}>
-          <Col span={24}>
-            <ReferenceSupportTable />
-          </Col>
-          <Col span={24}>
-            <Card title='Trash'>
-            </Card>
-          </Col>
-        </Row>
-      </Col>
-    </Row >
+    <>
+      <Row gutter={[16, 16]} style={{ paddingLeft: '16px', paddingRight: '16px', paddingTop: '16px' }}>
+        <Col span={16}>
+          <List
+            header={(
+              <Row justify='end'>
+                <Button
+                  icon={<SwapRightOutlined />}
+                  onClick={props.goToNormalMode}
+                />
+              </Row>
+            )}
+            bordered
+            dataSource={sortedActionableItems}
+            renderItem={(doc) => (
+              <List.Item
+                style={{ width: '100%', alignItems: 'start' }}
+                extra={(
+                  <Space align='start' direction='vertical'>
+                    <Button
+                      icon={<FormOutlined />}
+                      onClick={() => {
+                        setState('edit');
+                        setActionableToProcess(doc);
+                      }}
+                    />
+                    <Button
+                      icon={<DeleteOutlined />}
+                      onClick={() => deleteItemWithConfirm(ProcessedCRUDService, doc._id)}
+                    />
+                  </Space>
+                )}
+              >
+                <ItemContent doc={doc} />
+              </List.Item>
+            )}
+          />
+        </Col>
+        <Col span={8}>
+          <Row gutter={[0, 16]}>
+            <Col span={24}>
+              <ReferenceSupportTable />
+            </Col>
+            <Col span={24}>
+              <Card title='Trash'>
+              </Card>
+            </Col>
+          </Row>
+        </Col>
+      </Row >
+      <Modal
+        open={state === 'edit'}
+        onCancel={() => {
+          setState('normal');
+          setActionableToProcess(undefined);
+        }}
+        onOk={() => {
+          if (window.confirm("Do you want to destroy this actionable and create an action/project?")) {
+            setState('normal');
+            setActionableToProcess(undefined);
+          }
+        }}
+        destroyOnClose
+      >
+        <pre>
+          {JSON.stringify(actionableToProcess, null, 2)}
+        </pre>
+      </Modal>
+    </>
   );
 };
 
