@@ -5,6 +5,7 @@ import { useSelector } from '@xstate/react';
 import { ActorRefFrom } from 'xstate';
 import createCRUDMachine from '../../lib/CRUDMachine';
 import { BaseDoc, OptionalId } from '../../lib/Repository';
+import { deleteItemWithConfirm } from '../../utils';
 
 type DebugModuleProps<T extends BaseDoc> = {
   crudService: ActorRefFrom<ReturnType<typeof createCRUDMachine<T>>>
@@ -37,7 +38,7 @@ const DebugModule = <T extends BaseDoc>(props: DebugModuleProps<T>) => {
                 />
                 <Button
                   icon={<DeleteOutlined />}
-                  onClick={() => props.crudService.send({ type: 'DELETE', _id: doc._id })}
+                  onClick={() => deleteItemWithConfirm(props.crudService, doc._id)}
                 />
               </>
             )}

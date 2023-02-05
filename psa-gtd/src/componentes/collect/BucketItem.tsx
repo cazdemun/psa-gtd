@@ -4,7 +4,7 @@ import { ActorRefFrom } from 'xstate';
 import { BucketItem } from '../../models';
 import { Button, Col, Form, Input, List, Row, Space } from 'antd';
 import { BuildFilled, BuildOutlined, DeleteOutlined, EditFilled, EditOutlined, SaveOutlined, ScissorOutlined } from '@ant-design/icons';
-import { multiSlice } from '../../utils';
+import { deleteItemWithConfirm, multiSlice } from '../../utils';
 
 import './BucketItem.css';
 import ItemContent from '../ContentItem';
@@ -177,7 +177,7 @@ const BucketItemView: React.FC<BucketItemViewProps> = (props) => {
           </Space>
           <Button
             icon={<DeleteOutlined />}
-            onClick={() => props.bucketCRUDService.send({ type: 'DELETE', _id: props.doc._id, })}
+            onClick={() => deleteItemWithConfirm(props.bucketCRUDService, props.doc._id)}
           />
         </Space>
       )}

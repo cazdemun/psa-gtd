@@ -6,7 +6,7 @@ import ItemContent from '../ContentItem';
 import { DeleteOutlined, RollbackOutlined, SwapLeftOutlined } from '@ant-design/icons';
 import { Actionable, BucketItem, ProcessedItem, Reference, Someday, Support, Trash } from '../../models';
 import { NewDoc } from '../../lib/Repository';
-import { getLastIndexFirstLevel, rollbackReferenceItem, rollbackSupportItem, sortByIndex } from '../../utils';
+import { deleteItemWithConfirm, getLastIndexFirstLevel, rollbackReferenceItem, rollbackSupportItem, sortByIndex } from '../../utils';
 
 
 type GenericTableProps<T extends ProcessedItem> = {
@@ -52,7 +52,7 @@ const GenericTable = <T extends ProcessedItem>(props: GenericTableProps<T>) => {
                   />
                   <Button
                     icon={<DeleteOutlined />}
-                    onClick={() => ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, })}
+                    onClick={() => deleteItemWithConfirm(ProcessedCRUDService, processedItem._id)}
                   />
                 </Space>
               </Space>
