@@ -1,10 +1,10 @@
 import React, { useContext } from 'react';
-import { Button, Card, List, Space } from "antd";
+import { Button, Card, Col, List, Row, Space } from "antd";
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import ItemContent from '../ContentItem';
 import { DeleteOutlined, RollbackOutlined, SwapLeftOutlined } from '@ant-design/icons';
-import { Actionable, BucketItem, ProcessedItem, Reference, Someday, Support, Trash } from '../../models';
+import { Action, Actionable, BucketItem, ProcessedItem, Project, Reference, Someday, Support, Trash } from '../../models';
 import { NewDoc } from '../../lib/Repository';
 import { deleteItemWithConfirm, getLastIndexFirstLevel, rollbackReferenceItem, rollbackSupportItem, sortByIndex } from '../../utils';
 
@@ -14,7 +14,7 @@ type GenericTableProps<T extends ProcessedItem> = {
   cardDescription?: React.ReactNode
   cardExtra?: React.ReactNode
   filter: (doc: ProcessedItem) => doc is T
-  onRollback: (oldDoc: T) => any
+  onRollback?: (oldDoc: T) => any
   renderItem: (oldDoc: T) => React.ReactNode
 }
 
@@ -46,10 +46,12 @@ const GenericTable = <T extends ProcessedItem>(props: GenericTableProps<T>) => {
             extra={(
               <Space align='start'>
                 <Space direction='vertical'>
-                  <Button
-                    icon={<RollbackOutlined />}
-                    onClick={() => props.onRollback(processedItem)}
-                  />
+                  {props.onRollback !== undefined && (
+                    <Button
+                      icon={<RollbackOutlined />}
+                      onClick={() => props.onRollback !== undefined ? props.onRollback(processedItem) : undefined}
+                    />
+                  )}
                   <Button
                     icon={<DeleteOutlined />}
                     onClick={() => deleteItemWithConfirm(ProcessedCRUDService, processedItem._id)}
@@ -106,6 +108,46 @@ export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
         ProcessedCRUDService.send({ type: 'DELETE', _id: processedItem._id, });
       }}
       renderItem={(processedItem) => <ItemContent doc={processedItem} hideLineNumber />}
+    />
+  );
+};
+
+type ProjectsTableProps = {
+}
+
+export const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
+  const { service } = useContext(GlobalServicesContext);
+
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
+
+  return (
+    <GenericTable<Project>
+      title={`Projects`}
+      filter={(doc): doc is Project => (doc.type === 'project' && doc.project === undefined)}
+      renderItem={(processedItem) => (
+        <Row style={{ width: '100%' }}>
+          <Col span={24}>
+            {processedItem.title}
+          </Col>
+          <Col span={24}>
+            <List
+              dataSource={
+                processedItem.actions
+                  .map((_id) => processedItemsMap.get(_id))
+                  .filter((doc): doc is Action | Project => doc !== undefined)
+              }
+              renderItem={(child) => (
+                <List.Item>
+                  <pre>
+                    {JSON.stringify(child, null, 2)}
+                  </pre>
+                </List.Item>
+              )}
+            />
+          </Col>
+        </Row>
+      )}
     />
   );
 };
