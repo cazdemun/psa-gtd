@@ -22,16 +22,26 @@ type Path = typeof paths[number];
 
 const ACTIONABLE_TABLE_LIMIT = 5;
 
-const items: (items: number) => MenuProps['items'] = (items) => [
+const items: (items: number, actionables: number) => MenuProps['items'] = (items, actionables) => [
   {
     label: `Collect (${items})`,
     key: 'collect',
     icon: <EyeOutlined />,
   },
   {
-    label: `Process / Organize (${items})`,
+    label: `Process / Organize (${items}/${actionables})`,
     key: 'process',
     icon: <FilterOutlined />,
+  },
+  {
+    label: `Review (flow)`,
+    key: 'review',
+    icon: <FundProjectionScreenOutlined />,
+  },
+  {
+    label: `Do`,
+    key: 'do',
+    icon: <FireOutlined />,
   },
   {
     label: `Actions / Projects`,
@@ -43,17 +53,31 @@ const items: (items: number) => MenuProps['items'] = (items) => [
     key: 'others',
     icon: <FolderOutlined />,
   },
-  {
-    label: `Review (show here maybe)`,
-    key: 'review',
-    icon: <FundProjectionScreenOutlined />,
-  },
-  {
-    label: `Do`,
-    key: 'do',
-    icon: <FireOutlined />,
-  },
 ];
+
+type HeaderProps = {
+  path: Path,
+  setPath: (parth: Path) => any
+  bucketItemsLength: number
+}
+
+const Header: React.FC<HeaderProps> = (props) => {
+  const GlobalServices = useInterpret(GlobalServicesMachine);
+
+  const ProcessedCRUDActor = useSelector(GlobalServices, ({ context }) => context.processedCRUDActor);
+  const processedItems = useSelector(ProcessedCRUDActor, ({ context }) => context.docs);
+
+  const actionable = processedItems.filter((doc) => doc.type === 'actionable');
+
+  return (
+    <Menu
+      onClick={(e) => props.setPath(e.key as Path)} selectedKeys={[props.path]}
+      mode="horizontal"
+      items={items(props.bucketItemsLength, actionable.length)}
+      style={{ flex: '1' }}
+    />
+  );
+};
 
 function App() {
   const [path, setPath] = useState<Path>('collect');
@@ -83,11 +107,10 @@ function App() {
     }}
     >
       <Row style={{ width: '100%' }} align='bottom' >
-        <Menu
-          onClick={(e) => setPath(e.key as Path)} selectedKeys={[path]}
-          mode="horizontal"
-          items={items(bucketItems.length)}
-          style={{ flex: '1' }}
+        <Header
+          setPath={setPath}
+          path={path}
+          bucketItemsLength={bucketItems.length}
         />
         <Col>
           <Space style={{ paddingRight: '8px', alignItems: 'center' }}>
