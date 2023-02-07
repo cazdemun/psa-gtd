@@ -5,7 +5,7 @@ import { Button, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
-import { ActionableTable, ProjectsTable, ReferenceSupportTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
+import { ActionableTable, ProjectsTable, ReferenceSupportTable, SingleActionsTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
 import { deleteItemWithConfirm, sortByIndex } from '../../utils';
 import ItemContent from '../ContentItem';
 import { DeleteOutlined, FormOutlined, SwapRightOutlined } from '@ant-design/icons';
@@ -22,10 +22,6 @@ const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = 
 
   const [state, setState] = useState<'normal' | 'edit'>('normal');
   const [actionableToProcess, setActionableToProcess] = useState<Actionable | undefined>(undefined);
-
-  // const BucketCRUDService = useSelector(service, ({ context }) => context.bucketCRUDActor);
-  // const bucketItems = useSelector(BucketCRUDService, ({ context }) => context.docs);
-  // const sortedBucketItems = bucketItems.slice().sort((a, b) => sortByIndex(a, b));
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
@@ -74,8 +70,7 @@ const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = 
         </Col>
         <Col span={10}>
           <ProjectsTable />
-          Projects table
-          Actions table
+          <SingleActionsTable />
         </Col>
       </Row >
       <ActionableModal

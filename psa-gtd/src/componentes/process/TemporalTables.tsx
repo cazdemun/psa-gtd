@@ -152,6 +152,25 @@ export const ProjectsTable: React.FC<ProjectsTableProps> = (props) => {
   );
 };
 
+type SingleActionsTableProps = {
+}
+
+export const SingleActionsTable: React.FC<SingleActionsTableProps> = (props) => {
+  return (
+    <GenericTable<Action>
+      title={`Single actions`}
+      filter={(doc): doc is Action => (doc.type === 'action' && doc.project === undefined)}
+      renderItem={(processedItem) => (
+        <Row style={{ width: '100%' }}>
+          <Col span={24}>
+            {processedItem.content}
+          </Col>
+        </Row>
+      )}
+    />
+  );
+};
+
 type ReferenceSupportTableProps = {
 }
 
