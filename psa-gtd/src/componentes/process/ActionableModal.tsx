@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { Button, Form, Input, Modal, Row, Select } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
@@ -14,7 +14,7 @@ import { SearchSelect } from '../common/Search';
 
 const ACTIONABLE_MODAL_LABEL_COL = 2;
 
-type ActionableFormValues = Action | (Project & { description: string })
+type ActionableFormValues = (Action | Project) & { rawActions: string }
 
 const onFinish = (
   values: ActionableFormValues,
@@ -29,14 +29,15 @@ const onFinish = (
     const projectId = uuidv4(); // ⇨ '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'
     const nextIndex = getNextIndex(lastProcessedIndex);
 
-    const newActions: NewDoc<Action>[] = values.content
+    const newActions: NewDoc<Action>[] = (values.rawActions ?? '')
       .split('\n')
-      .map((actionContent) => actionContent.trim())
-      .filter((actionContent) => actionContent !== undefined && actionContent !== '')
-      .map((content, i) => ({
+      .map((actionTitle) => actionTitle.trim())
+      .filter((actionTitle) => actionTitle !== undefined && actionTitle !== '')
+      .map((title, i) => ({
         _id: uuidv4(),
         type: 'action',
-        content,
+        title,
+        content: 'Generated from TextArea',
         created: Date.now(),
         index: `${nextIndex}.${getNextIndex(i)}`,
         modified: Date.now(),
@@ -46,7 +47,7 @@ const onFinish = (
     const newProject: NewDoc<Project> = {
       _id: projectId,
       type: 'project',
-      content: values.description ?? '',
+      content: values.content ?? '',
       project: values.project ?? undefined,
       created: Date.now(),
       index: nextIndex,
@@ -100,7 +101,8 @@ const onFinish = (
     const newAction: NewDoc<Action> = {
       _id: actionId,
       type: 'action',
-      content: values.content,
+      title: values.title,
+      content: values.content ?? '',
       project: values.project ?? undefined,
       created: Date.now(),
       index: nextIndex,
@@ -154,7 +156,6 @@ type DestroyableFormProps = {
 
 const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
   const [form] = useForm<ActionableFormValues>();
-  const { type, ...initialValues } = props.actionableToProcess || {};
 
   const actionType = useWatch('type', form);
 
@@ -166,11 +167,38 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
 
   const lastProcessedIndex = getLastIndexFirstLevel(processedItems);
 
+  useEffect(() => {
+    if (actionType === 'project') {
+      form.setFieldsValue({
+        ...props.actionableToProcess,
+        type: 'project',
+        title: '',
+        rawActions: props.actionableToProcess?.content,
+        content: form.getFieldValue('content'),
+      })
+    }
+
+    if (actionType === 'action') {
+      form.setFieldsValue({
+        ...props.actionableToProcess,
+        type: 'action',
+        title: props.actionableToProcess?.content,
+        content: form.getFieldValue('content'),
+      })
+    }
+  }, [form, actionType, props.actionableToProcess])
+
+
   return (
     <Form
       form={form}
       labelCol={{ span: ACTIONABLE_MODAL_LABEL_COL }}
-      initialValues={{ ...initialValues, type: 'project' }}
+      initialValues={{
+        ...props.actionableToProcess,
+        type: 'project',
+        content: '',
+        rawActions: props.actionableToProcess?.content,
+      }}
       onFinish={(values) => {
         onFinish(values, lastProcessedIndex, props.actionableToProcess, processedItemsMap, ProcessedCRUDService);
         props.onFinish();
@@ -192,22 +220,18 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
           },
         ]} />
       </Form.Item>
-      {actionType === 'project' && (
-        <>
-          <Form.Item
-            label="Title"
-            name='title'
-            rules={[{ required: true, message: 'Please add some text' }]}
-          >
-            <Input />
-          </Form.Item>
-          <Form.Item label="Desc." name='description'>
-            <Input.TextArea
-              autoSize={{ minRows: 2 }}
-            />
-          </Form.Item>
-        </>
-      )}
+      <Form.Item
+        label="Title"
+        name='title'
+        rules={[{ required: true, message: 'Please add some text' }]}
+      >
+        <Input />
+      </Form.Item>
+      <Form.Item label="Desc." name='content'>
+        <Input.TextArea
+          autoSize={{ minRows: 2 }}
+        />
+      </Form.Item>
       <Row align='top'>
         <Form.Item
           label="Parent"
@@ -229,7 +253,7 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
           />
         </Form.Item>
         <div>
-          <Button icon={<SearchOutlined />} />
+          <Button icon={<SearchOutlined />} disabled />
         </div>
       </Row>
       <Row style={{ width: '100%' }}>
@@ -250,23 +274,26 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
           <Input disabled />
         </Form.Item>
       </Row>
-      <Form.Item
-        label={actionType === 'action' ? "Title" : "Actions"}
-        name='content'
-        rules={actionType === 'action' ? [{ required: true, message: 'Please add some text' }] : []}
-      >
-        <Input.TextArea
-          autoSize={{ minRows: 10 }}
-        />
-      </Form.Item>
-      <Form.Item>
-        <Button
-          htmlType='submit'
-          type='primary'
+      {actionType === 'project' && (
+        <Form.Item
+          label="Actions"
+          name='rawActions'
         >
-          Create
-        </Button>
-      </Form.Item>
+          <Input.TextArea
+            autoSize={{ minRows: 10 }}
+          />
+        </Form.Item>
+      )}
+      <Row >
+        <Form.Item>
+          <Button
+            htmlType='submit'
+            type='primary'
+          >
+            Create
+          </Button>
+        </Form.Item>
+      </Row>
     </Form>
   );
 };

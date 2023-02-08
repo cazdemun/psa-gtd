@@ -8,6 +8,7 @@ import ProcessModule from './componentes/process';
 import bucketItemsProcessesService from './machines/bucketItemsProcessesServices';
 import { sortByIndex } from './utils';
 import GlobalServicesContext, { GlobalConfig } from './componentes/context/GlobalServicesContext';
+import ActionsProjectsTable from './componentes/projects/ActionsProjectsTable';
 
 const paths = [
   'collect',
@@ -80,7 +81,7 @@ const Header: React.FC<HeaderProps> = (props) => {
 };
 
 function App() {
-  const [path, setPath] = useState<Path>('collect');
+  const [path, setPath] = useState<Path>('actions');
   const [globalConfig, setGlobalConfig] = useState<Partial<GlobalConfig>>({
     actionableTableLimit: ACTIONABLE_TABLE_LIMIT,
     disableAutoActionableTable: false,
@@ -128,6 +129,7 @@ function App() {
       </Row>
       {path === 'collect' && (<CollectModule bucketCRUDService={BucketCRUDService} />)}
       {path === 'process' && (<ProcessModule processes={processes} />)}
+      {path === 'actions' && (<ActionsProjectsTable />)}
     </GlobalServicesContext.Provider >
   );
 }

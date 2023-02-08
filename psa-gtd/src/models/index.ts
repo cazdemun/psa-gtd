@@ -45,10 +45,15 @@ export type Actionable = (BaseDoc & BaseProcessedItem) & {
   type: 'actionable'
 }
 
-export type Action = (BaseDoc & BaseProcessedItem) & {
-  type: 'action'
+export type BaseAction = (BaseDoc & BaseProcessedItem) & {
+  type: 'action' | 'project'
   project?: string
+  title: string
   delegate?: boolean
+  cyclic?: {
+    finished: number
+    period: number // days
+  }
   scheduled?: {
     start: number
     deadline: number
@@ -57,17 +62,27 @@ export type Action = (BaseDoc & BaseProcessedItem) & {
   modified: number
 }
 
+export type Action = BaseAction & {
+  type: 'action'
+}
+
 export type Project = (BaseDoc & BaseProcessedItem) & {
   type: 'project'
   project?: string
   title: string
-  actions: string[] // (Action | Project)[]
+  delegate?: boolean
+  cyclic?: {
+    finished: number
+    period: number // days
+  }
   scheduled?: {
     start: number
     deadline: number
   }
+  finished?: number
   modified: number
 }
+  & { actions: string[] }// (Action | Project)[]
 
 export type FinishedActionable = {
   type: 'finished'

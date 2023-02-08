@@ -2,7 +2,7 @@ import { ActorRefFrom } from 'xstate';
 import { NotLazyCRUDStateMachine } from './lib/CRUDMachine';
 import { BaseDoc, NewDoc } from './lib/Repository';
 import { Action, BucketItem, Project, Reference, Support } from './models';
-import { v4 as uuidv4 } from 'uuid';
+// import { v4 as uuidv4 } from 'uuid';
 
 export const trace = <T>(x: T): T => {
   console.log(x);
@@ -147,87 +147,88 @@ export const getNextIndex = (lastIndex: number): string => (lastIndex + 1).toStr
 // };
 
 export const generateProjectsAndActions = (content: string, lastIndex: number): (Action | Project)[] => {
-  const lines = content.split("\n").filter((line) => line !== '' && line !== undefined);
-  // let projects: Project[] = [];
-  // let currentProject: Project | undefined;
-  // let indentLevel = 0;
+  return [];
+  // const lines = content.split("\n").filter((line) => line !== '' && line !== undefined);
+  // // let projects: Project[] = [];
+  // // let currentProject: Project | undefined;
+  // // let indentLevel = 0;
 
-  const result = lines.reduce((acc, line, currentIndex, array) => {
-    const trimmedLine = line.trim();
-    // const previousIndentLevel = currentIndex > 0 ? array.at(currentIndex - 1)?.search(/\S|$/) : undefined;
-    const currentIndentLevel = line.search(/\S|$/);
-    const nextIndentLevel = array.at(currentIndex + 1)?.search(/\S|$/);
+  // const result = lines.reduce((acc, line, currentIndex, array) => {
+  //   const trimmedLine = line.trim();
+  //   // const previousIndentLevel = currentIndex > 0 ? array.at(currentIndex - 1)?.search(/\S|$/) : undefined;
+  //   const currentIndentLevel = line.search(/\S|$/);
+  //   const nextIndentLevel = array.at(currentIndex + 1)?.search(/\S|$/);
 
-    // Case
-    // Project 1
-    //  Action 0
-    // Action 1 <-
-    // Action 2 | Project 2
-    //
-    // Case
-    // Project 1
-    //  Action 0
-    // Action 1
-    // Action 2 <-
-    // EOF
-    // 
-    const isNextAction = currentIndentLevel === nextIndentLevel && currentIndentLevel === 0;
-    const isLastAction = currentIndex === array.length - 1 && currentIndentLevel === 0;
-    if (isNextAction || isLastAction) {
-      // createAction without project
-      // currentProject does not change
-      // update lastIndex
-      const actionId = uuidv4();
+  //   // Case
+  //   // Project 1
+  //   //  Action 0
+  //   // Action 1 <-
+  //   // Action 2 | Project 2
+  //   //
+  //   // Case
+  //   // Project 1
+  //   //  Action 0
+  //   // Action 1
+  //   // Action 2 <-
+  //   // EOF
+  //   // 
+  //   const isNextAction = currentIndentLevel === nextIndentLevel && currentIndentLevel === 0;
+  //   const isLastAction = currentIndex === array.length - 1 && currentIndentLevel === 0;
+  //   if (isNextAction || isLastAction) {
+  //     // createAction without project
+  //     // currentProject does not change
+  //     // update lastIndex
+  //     const actionId = uuidv4();
 
-      acc.items.push({
-        type: 'action',
-        _id: actionId,
-        content: trimmedLine,
-        created: Date.now(),
-        index: getNextIndex(acc.lastIndex),
-        modified: Date.now(),
-      });
-      acc.lastIndex = acc.lastIndex + 1;
-    }
-    else if (currentIndentLevel === 0 || currentIndentLevel < (nextIndentLevel ?? 0)) {
-      const projectId = uuidv4();
-      acc.items.push({
-        type: 'project',
-        _id: projectId,
-        actions: [],
-        content: '',
-        created: Date.now(),
-        index: getNextIndex(acc.lastIndex),
-        modified: Date.now(),
-        title: trimmedLine,
-      });
-      acc.currentProject = projectId;
-      acc.lastIndex = acc.lastIndex + 1;
-    } else {
-      const actionId = uuidv4();
-      acc.items.push({
-        type: 'action',
-        _id: actionId,
-        content: trimmedLine,
-        created: Date.now(),
-        index: getNextIndex(acc.lastIndex),
-        modified: Date.now(),
-        project: acc.currentProject
-      });
-      if (acc.currentProject) {
-        (acc.items.find((p) => p._id === acc.currentProject) as Project)?.actions.push(actionId);
-      }
-      acc.lastIndex = acc.lastIndex + 1;
-    }
+  //     acc.items.push({
+  //       type: 'action',
+  //       _id: actionId,
+  //       content: trimmedLine,
+  //       created: Date.now(),
+  //       index: getNextIndex(acc.lastIndex),
+  //       modified: Date.now(),
+  //     });
+  //     acc.lastIndex = acc.lastIndex + 1;
+  //   }
+  //   else if (currentIndentLevel === 0 || currentIndentLevel < (nextIndentLevel ?? 0)) {
+  //     const projectId = uuidv4();
+  //     acc.items.push({
+  //       type: 'project',
+  //       _id: projectId,
+  //       actions: [],
+  //       content: '',
+  //       created: Date.now(),
+  //       index: getNextIndex(acc.lastIndex),
+  //       modified: Date.now(),
+  //       title: trimmedLine,
+  //     });
+  //     acc.currentProject = projectId;
+  //     acc.lastIndex = acc.lastIndex + 1;
+  //   } else {
+  //     const actionId = uuidv4();
+  //     acc.items.push({
+  //       type: 'action',
+  //       _id: actionId,
+  //       content: trimmedLine,
+  //       created: Date.now(),
+  //       index: getNextIndex(acc.lastIndex),
+  //       modified: Date.now(),
+  //       project: acc.currentProject
+  //     });
+  //     if (acc.currentProject) {
+  //       (acc.items.find((p) => p._id === acc.currentProject) as Project)?.actions.push(actionId);
+  //     }
+  //     acc.lastIndex = acc.lastIndex + 1;
+  //   }
 
-    return acc;
-  }, {
-    items: [] as (Action | Project)[],
-    currentProject: undefined as string | undefined,
-    lastIndex,
-  })
+  //   return acc;
+  // }, {
+  //   items: [] as (Action | Project)[],
+  //   currentProject: undefined as string | undefined,
+  //   lastIndex,
+  // })
 
-  return result.items;
+  // return result.items;
 }
 
 // Current problem
