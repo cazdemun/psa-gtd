@@ -67,6 +67,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
           crudService={props.bucketCRUDService}
           docs={sortedDocs}
           newDoc={{
+            type: 'bucket',
             content: 'New Test\n\n\nNewTest',
             created: Date.now(),
             index: (lastIndex + 1).toString(),
@@ -91,6 +92,7 @@ const CollectModule: React.FC<CollectModuleProps> = (props) => {
           onCreate={(bucketItem) => props.bucketCRUDService.send({
             type: 'CREATE',
             doc: {
+              type: 'bucket',
               content: bucketItem,
               created: Date.now(),
               index: ((lastIndex ?? 0) + 1).toString(),

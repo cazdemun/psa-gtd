@@ -95,6 +95,7 @@ export const ActionableTable: React.FC<ActionableTableProps> = (props) => {
       )}
       onRollback={(processedItem) => {
         const newItem: NewDoc<BucketItem> = {
+          type: 'bucket',
           content: processedItem.content,
           created: Date.now(),
           index: (lastIndexBucketItems + 1).toString(),

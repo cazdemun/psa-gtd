@@ -1,6 +1,7 @@
 import { BaseDoc } from '../lib/Repository';
 
 export type BucketItem = BaseDoc & {
+  type: 'bucket'
   created: number
   content: string
   index: string
@@ -90,10 +91,10 @@ export type ProcessedItem =
   | Project | Actionable | Action
 
 
-export type FinishedActionable = {
+export type FinishedActionable = BaseDoc & {
   type: 'finished'
   item: Project | Action | BucketItem
-  finished?: number
+  finished: number
 }
 
 // wastelandsSupportFiles: string[] path of files (I think is best to just create a reference/support file when analizing the explorer)

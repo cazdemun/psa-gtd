@@ -17,3 +17,21 @@ export const migrationOne = () => {
   //   data: actionv1,
   // })
 }
+
+// update bucket items v1 to v2 (type)
+
+export const migrationTwo = () => {
+  // const actionv1 = bucketItems
+  //   .map((doc) => ({
+  //     type: 'UPDATE',
+  //     _id: doc._id,
+  //     doc: {
+  //       type: 'bucket'
+  //     },
+  //   }) as const);
+
+  // BucketCRUDService.send({
+  //   type: 'BATCH',
+  //   data: actionv1,
+  // })
+}

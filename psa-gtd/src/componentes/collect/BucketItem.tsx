@@ -106,6 +106,7 @@ const BucketItemSlice: React.FC<BucketItemSliceProps> = (props) => {
               {
                 type: 'CREATE',
                 doc: output.map((textLines, i) => ({
+                  type: 'bucket',
                   content: textLines.join('\n'),
                   created: Date.now(),
                   index: `${props.doc.index}.${i + 1}`,

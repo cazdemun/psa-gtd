@@ -1,12 +1,68 @@
 import React, { useContext } from 'react';
 import ActionsProjectsTable from '../projects/ActionsProjectsTable';
-import { Button, Card, Col, List, Row, Space } from 'antd';
+import { Button, Card, Col, List, Row, Space, ConfigProvider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { recursiveParent, uniqueValues } from '../../utils';
-import { Action, Project } from '../../models';
+import { Action, FinishedActionable, ProcessedItem, Project } from '../../models';
 import { CheckOutlined, DeleteOutlined } from '@ant-design/icons';
+import CookieJar from './CookieJar';
+import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
+import { ActorRefFrom } from 'xstate';
+import { NewDoc } from '../../lib/Repository';
 
+const onFinish = (
+  actionToProcess: Action | Project | undefined,
+  processedItemsMap: Map<string, ProcessedItem>,
+  ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>,
+  FinishedCRUDService: ActorRefFrom<FinishedCRUDStateMachine>,
+) => {
+  if (actionToProcess === undefined) return;
+
+  const newFinishedItem: NewDoc<FinishedActionable> = {
+    type: 'finished',
+    item: actionToProcess,
+    finished: Date.now(),
+  }
+
+  if (actionToProcess.project !== undefined) {
+    const updatedOldParents = recursiveParent(actionToProcess.project, processedItemsMap)
+      .map((_id) => processedItemsMap.get(_id))
+      .filter((doc): doc is Project => doc !== undefined)
+      .map((doc, i) => ({
+        type: 'UPDATE',
+        _id: doc._id,
+        doc: {
+          // modified: Date.now(),
+          actions: i === 0 ? doc.actions.filter((action) => action !== actionToProcess._id) : doc.actions,
+        },
+      }) as const);
+
+    ProcessedCRUDService.send({
+      type: 'BATCH',
+      data: [
+        ...updatedOldParents,
+        {
+          type: 'DELETE',
+          _id: actionToProcess?._id,
+        }
+      ]
+    })
+    FinishedCRUDService.send({
+      type: 'CREATE',
+      doc: newFinishedItem,
+    })
+  } else {
+    FinishedCRUDService.send({
+      type: 'CREATE',
+      doc: newFinishedItem,
+    })
+    ProcessedCRUDService.send({
+      type: 'DELETE',
+      _id: actionToProcess?._id,
+    })
+  }
+}
 
 
 type DoModuleProps = {
@@ -16,11 +72,14 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
 
   const { service } = useContext(GlobalServicesContext);
 
-  const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDMachine);
+  const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDActor);
   const doCategories = useSelector(DoCategoryCRUDService, ({ context }) => context.docs);
 
-  const ProcessedCRUDActor = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItemsMap = useSelector(ProcessedCRUDActor, ({ context }) => context.docsMap);
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
+
+  const FinishedCRUDService = useSelector(service, ({ context }) => context.finishedCRUDActor);
+  // const finishedItems = useSelector(FinishedCRUDService, ({ context }) => context.docs);
 
   return (
     <Row gutter={[16, 16]}>
@@ -59,76 +118,82 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
               Create main category
             </Button>
           )}
-          {
-            doCategories
-              .map((doCategory) => (
-                <Col span={8}>
-                  <Card title={doCategory.title} bodyStyle={{ padding: '0px' }}>
-                    <List
-                      dataSource={
-                        doCategory.actions
-                          .map((_id) => processedItemsMap.get(_id))
-                          .filter((doc): doc is Action => doc !== undefined)
-                      }
-                      renderItem={(item) => (
-                        <List.Item
-                          style={{ alignItems: 'start' }}
-                          extra={(
-                            <Space>
-                              <Button
-                                icon={<CheckOutlined />}
-                                onClick={() => {
-                                  // const FinishedItem
-                                }}
+          <ConfigProvider renderEmpty={() => <></>}>
+            {
+              doCategories
+                .map((doCategory) => (
+                  <Col span={8}>
+                    <Card title={doCategory.title} bodyStyle={{ padding: '0px' }}>
+                      <List
+                        dataSource={
+                          doCategory.actions
+                            .map((_id) => processedItemsMap.get(_id))
+                            .filter((doc): doc is Action => doc !== undefined)
+                        }
+                        renderItem={(item) => (
+                          <List.Item
+                            style={{ alignItems: 'start' }}
+                            extra={(
+                              <Space>
+                                <Button
+                                  icon={<CheckOutlined />}
+                                  onClick={() => {
+                                    onFinish(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
+                                    // const FinishedItem
+                                  }}
+                                />
+                                <Button
+                                  icon={<DeleteOutlined />}
+                                  onClick={() => {
+                                    const [firstCategory] = doCategories;
+                                    if (firstCategory === undefined) return;
+                                    if (!firstCategory.actions.some((_id) => _id === item._id)) return;
+                                    DoCategoryCRUDService.send({
+                                      type: 'UPDATE',
+                                      _id: firstCategory._id,
+                                      doc: {
+                                        actions: firstCategory.actions.filter((_id) => _id !== item._id),
+                                      }
+                                    })
+                                  }}
+                                />
+                              </Space>
+                            )}
+                          >
+                            <Row style={{ width: '100%' }}>
+                              {item.title}
+                              <List
+                                dataSource={
+                                  recursiveParent(item.project, processedItemsMap)
+                                    .map((_id) => processedItemsMap.get(_id))
+                                    .filter((doc): doc is Project => doc !== undefined)
+                                }
+                                renderItem={(item) => (
+                                  <List.Item>
+                                    {`[Project] ${item.title}`}
+                                  </List.Item>
+                                )}
                               />
-                              <Button
-                                icon={<DeleteOutlined />}
-                                onClick={() => {
-                                  const [firstCategory] = doCategories;
-                                  if (firstCategory === undefined) return;
-                                  if (!firstCategory.actions.some((_id) => _id === item._id)) return;
-                                  DoCategoryCRUDService.send({
-                                    type: 'UPDATE',
-                                    _id: firstCategory._id,
-                                    doc: {
-                                      actions: firstCategory.actions.filter((_id) => _id !== item._id),
-                                    }
-                                  })
-                                }}
-                              />
-                            </Space>
-                          )}
-                        >
-                          <Row style={{ width: '100%' }}>
-                            {item.title}
-                            <List
-                              dataSource={
-                                recursiveParent(item.project, processedItemsMap)
-                                  .map((_id) => processedItemsMap.get(_id))
-                                  .filter((doc): doc is Project => doc !== undefined)
-                              }
-                              renderItem={(item) => (
-                                <List.Item>
-                                  {`[Project] ${item.title}`}
-                                </List.Item>
-                              )}
-                            />
-                          </Row>
-                        </List.Item>
-                      )}
-                    />
-                    {/* <pre>
+                            </Row>
+                          </List.Item>
+                        )}
+                      />
+                      {/* <pre>
                       {JSON.stringify(doCategory, null, 2)}
                     </pre> */}
-                  </Card>
-                </Col>
-              ))
-          }
-          Choosen activities
-          Calendar
-          Deadlines
-          Repeated
-          Cookie Jar
+                    </Card>
+                  </Col>
+                ))
+            }
+          </ConfigProvider>
+          <Col span={8}>
+            Calendar
+            Deadlines
+            Repeated
+          </Col>
+          <Col span={8}>
+            <CookieJar />
+          </Col>
         </Row>
       </Col>
     </Row>

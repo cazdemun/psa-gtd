@@ -2,7 +2,7 @@ import {
   createMachine, assign, ActorRefFrom, spawn
 } from 'xstate';
 import createCRUDMachine from '../lib/CRUDMachine';
-import { BucketItem, DoCategory, ProcessedItem } from '../models';
+import { BucketItem, DoCategory, FinishedActionable, ProcessedItem } from '../models';
 
 type Test = {
   _id: string
@@ -17,12 +17,15 @@ const ProcessedCRUDMachine = createCRUDMachine<ProcessedItem>('processed', 'loca
 export type ProcessedCRUDStateMachine = typeof ProcessedCRUDMachine;
 const DoCategoryCRUDMachine = createCRUDMachine<DoCategory>('docategory', 'local');
 export type DoCategoryCRUDStateMachine = typeof DoCategoryCRUDMachine;
+const FinishedCRUDMachine = createCRUDMachine<FinishedActionable>('finished', 'local');
+export type FinishedCRUDStateMachine = typeof FinishedCRUDMachine;
 
 export type GlobalServicesContext = {
   testCRUDActor: ActorRefFrom<TestCRUDStateMachine>
   bucketCRUDActor: ActorRefFrom<BucketCRUDStateMachine>
   processedCRUDActor: ActorRefFrom<ProcessedCRUDStateMachine>
-  doCategoryCRUDMachine: ActorRefFrom<DoCategoryCRUDStateMachine>
+  doCategoryCRUDActor: ActorRefFrom<DoCategoryCRUDStateMachine>
+  finishedCRUDActor: ActorRefFrom<FinishedCRUDStateMachine>
 };
 
 type GlobalServicesEvent =
@@ -38,7 +41,8 @@ const GlobalServicesMachine = createMachine({
     testCRUDActor: {} as any,
     bucketCRUDActor: {} as any,
     processedCRUDActor: {} as any,
-    doCategoryCRUDMachine: {} as any,
+    doCategoryCRUDActor: {} as any,
+    finishedCRUDActor: {} as any,
   },
   id: "globalServices",
   initial: "start",
@@ -59,7 +63,8 @@ const GlobalServicesMachine = createMachine({
       testCRUDActor: () => spawn(TestCRUDMachine, TestCRUDMachine.id),
       bucketCRUDActor: () => spawn(BucketCRUDMachine, BucketCRUDMachine.id),
       processedCRUDActor: () => spawn(ProcessedCRUDMachine, ProcessedCRUDMachine.id),
-      doCategoryCRUDMachine: () => spawn(DoCategoryCRUDMachine, DoCategoryCRUDMachine.id),
+      doCategoryCRUDActor: () => spawn(DoCategoryCRUDMachine, DoCategoryCRUDMachine.id),
+      finishedCRUDActor: () => spawn(FinishedCRUDMachine, FinishedCRUDMachine.id),
     })
   },
   services: {},

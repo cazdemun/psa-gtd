@@ -88,6 +88,7 @@ export const rollbackReferenceItem = (reference: Reference, index: string): NewD
     `${reference.content}`;
 
   return {
+    type: 'bucket',
     content,
     created: Date.now(),
     index,
@@ -101,6 +102,7 @@ export const rollbackSupportItem = (reference: Support, index: string): NewDoc<B
     `${reference.content}`;
 
   return {
+    type: 'bucket',
     content,
     created: Date.now(),
     index,
