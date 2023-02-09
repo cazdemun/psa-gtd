@@ -86,59 +86,6 @@ const onFinish = (
       ]
     })
   }
-  // const updatedAction: Partial<Action | Project> = {
-  //   title: values.title,
-  //   modified: Date.now(),
-  // }
-
-  // if (values.project !== actionToProcess.project && nonNullabelString(values.project)) {
-  // if (values.project !== actionToProcess.project) {
-  //   const updatedOldParents = recursiveParent(actionToProcess.project, processedItemsMap)
-  //     .map((_id) => processedItemsMap.get(_id))
-  //     .filter((doc): doc is Project => doc !== undefined)
-  //     .map((doc, i) => ({
-  //       type: 'UPDATE',
-  //       _id: doc._id,
-  //       doc: {
-  //         // modified: Date.now(),
-  //         actions: i === 0 ? doc.actions.filter((action) => action !== actionToProcess._id) : doc.actions,
-  //       },
-  //     }) as const);
-
-  //   const updatedNewParents = recursiveParent(values.project, processedItemsMap)
-  //     .map((_id) => processedItemsMap.get(_id))
-  //     .filter((doc): doc is Project => doc !== undefined)
-  //     .map((doc, i) => ({
-  //       type: 'UPDATE',
-  //       _id: doc._id,
-  //       doc: {
-  //         modified: Date.now(),
-  //         actions: i === 0 ? uniqueValues([...doc.actions, actionToProcess._id]) : doc.actions,
-  //       },
-  //     }) as const);
-
-  //   ProcessedCRUDService.send({
-  //     type: 'BATCH',
-  //     data: [
-  //       ...updatedOldParents,
-  //       ...updatedNewParents,
-  //       {
-  //         type: 'UPDATE',
-  //         _id: actionToProcess?._id,
-  //         doc: {
-  //           ...updatedAction,
-  //           project: values.project,
-  //         },
-  //       }
-  //     ]
-  //   })
-  // } else {
-  //   ProcessedCRUDService.send({
-  //     type: 'UPDATE',
-  //     _id: actionToProcess?._id,
-  //     doc: updatedAction,
-  //   })
-  // }
 }
 
 type DestroyableFormProps = {

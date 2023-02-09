@@ -18,7 +18,7 @@ export const SearchSelect = ({ ...props }: SearchSelectProps) => (
     showSearch
     showArrow
     filterOption={selectFilterOption}
-    filterSort={selectFilterSort}
+    // filterSort={selectFilterSort}
     {...props}
   />
 );
