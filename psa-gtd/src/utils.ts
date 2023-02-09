@@ -30,6 +30,10 @@ export const multiSlice = <T>(arr: T[], positions: number[]): T[][] => {
   }, [] as T[][]).concat([arr.slice(start)])
 }
 
+export const uniqueValues = <T>(array: T[]): T[] => [...new Set(array)];
+
+export const nonNullabelString = (s: string | undefined): boolean => s !== undefined && s !== null && s !== '';
+
 export const sortByIndex = <T extends { index: string }>(a: T, b: T) => {
   let aArr = a.index.split(".");
   let bArr = b.index.split(".");

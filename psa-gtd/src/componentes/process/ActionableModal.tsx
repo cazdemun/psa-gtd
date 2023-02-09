@@ -1,8 +1,7 @@
-import React, { useContext, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useSelector } from '@xstate/react';
 import { Button, Form, Input, Modal, Row, Select } from 'antd';
-import GlobalServicesContext from '../context/GlobalServicesContext';
-import { getLastIndexFirstLevel, getNextIndex } from '../../utils';
+import { getLastIndexFirstLevel, getNextIndex, uniqueValues } from '../../utils';
 import { SearchOutlined } from '@ant-design/icons';
 import { Action, Actionable, ProcessedItem, Project } from '../../models';
 import { useForm, useWatch } from 'antd/es/form/Form';
@@ -60,7 +59,7 @@ const onFinish = (
 
     if (parentProject) {
       const updatedParentProject: Partial<Project> = {
-        actions: [...new Set([...parentProject.actions, projectId])],
+        actions: uniqueValues([...parentProject.actions, projectId]),
         modified: Date.now(),
       }
       ProcessedCRUDService.send({
@@ -113,7 +112,7 @@ const onFinish = (
 
     if (parentProject) {
       const updatedParentProject: Partial<Project> = {
-        actions: [...new Set([...parentProject.actions, actionId])],
+        actions: uniqueValues([...parentProject.actions, actionId]),
         modified: Date.now(),
       }
       ProcessedCRUDService.send({
@@ -151,6 +150,7 @@ const onFinish = (
 
 type DestroyableFormProps = {
   actionableToProcess: Actionable | undefined,
+  processedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>
   onFinish: (...args: any[]) => any
 }
 
@@ -159,11 +159,8 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
 
   const actionType = useWatch('type', form);
 
-  const { service } = useContext(GlobalServicesContext);
-
-  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
-  const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
+  const processedItems = useSelector(props.processedCRUDService, ({ context }) => context.docs);
+  const processedItemsMap = useSelector(props.processedCRUDService, ({ context }) => context.docsMap);
 
   const lastProcessedIndex = getLastIndexFirstLevel(processedItems);
 
@@ -200,7 +197,7 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
         rawActions: props.actionableToProcess?.content,
       }}
       onFinish={(values) => {
-        onFinish(values, lastProcessedIndex, props.actionableToProcess, processedItemsMap, ProcessedCRUDService);
+        onFinish(values, lastProcessedIndex, props.actionableToProcess, processedItemsMap, props.processedCRUDService);
         props.onFinish();
       }}
     >
@@ -301,8 +298,8 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
 type ActionableModalProps = {
   open: boolean
   onCancel: (...args: any[]) => any
-  onOk: (...args: any[]) => any
   actionableToProcess: Actionable | undefined
+  processedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>
 }
 
 const ActionableModal: React.FC<ActionableModalProps> = (props) => {
@@ -312,10 +309,11 @@ const ActionableModal: React.FC<ActionableModalProps> = (props) => {
       title='Create action/project'
       open={props.open}
       onCancel={props.onCancel}
-      onOk={props.onOk}
+      footer={null}
       destroyOnClose
     >
       <DestroyableForm
+        processedCRUDService={props.processedCRUDService}
         actionableToProcess={props.actionableToProcess}
         onFinish={props.onCancel}
       />

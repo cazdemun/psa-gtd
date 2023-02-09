@@ -79,12 +79,7 @@ const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = 
           setState('normal');
           setActionableToProcess(undefined);
         }}
-        onOk={() => {
-          if (window.confirm("Do you want to destroy this actionable and create an action/project?")) {
-            setState('normal');
-            setActionableToProcess(undefined);
-          }
-        }}
+        processedCRUDService={ProcessedCRUDService}
         actionableToProcess={actionableToProcess}
       />
     </>

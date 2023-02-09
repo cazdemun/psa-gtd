@@ -4,9 +4,11 @@ import { useInterpret, useSelector } from '@xstate/react';
 import GlobalServicesMachine from '../../machines/GlobalServicesMachine';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
-import { DeleteOutlined, EditOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditFilled, EditOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
-import { deleteItemWithConfirm } from '../../utils';
+import { deleteItemWithConfirm, sortByIndex, uniqueValues } from '../../utils';
+import MassActionsModal from './MassActionsModal';
+import ActionableModal from '../process/ActionableModal';
 
 // interface DataType {
 //   key: React.ReactNode;
@@ -19,15 +21,22 @@ import { deleteItemWithConfirm } from '../../utils';
 const columns = (props: {
   onEdit: (item: Action | Project) => any,
   onDelete: (item: Action | Project) => any,
+  onMassActionMove: () => any,
+  onCheck: (checked: boolean, item: Action | Project) => any,
+  onDisabled: (item: Action | Project) => boolean,
+  onMassActionMoveHidden: (item: Action | Project) => boolean,
 }): ColumnsType<Action | Project> => [
     {
       title: 'Title',
       dataIndex: 'title',
       key: 'title',
-      render: (_, item: Action | Project) => item.type === 'project' ? `[Project] ${item.title}${item.modified}` : (
-        <Space>
-          <Checkbox />
-          {item.title ?? item.content}
+      render: (_, item: Action | Project) => item.type === 'project' ? `[Project] ${item.title} : ${item.index}` : (
+        <Space title={item.content}>
+          <Checkbox
+            onChange={(checked) => props.onCheck(checked.target.checked, item)}
+            disabled={props.onDisabled(item)}
+          />
+          {`${item.title ?? item.content} : ${item.index}`}
         </Space>
       ),
     },
@@ -38,11 +47,18 @@ const columns = (props: {
       render: (_, item: Action | Project) => (
         <Space>
           <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />
+          {props.onMassActionMoveHidden(item) && <Button icon={<EditFilled />} onClick={() => props.onMassActionMove()} />}
           <Button icon={<DeleteOutlined />} onClick={() => props.onDelete(item)} />
         </Space>
       ),
     },
   ];
+
+export const sortByProyectFirst = <T extends Action | Project>(a: T, b: T, reverse: boolean): number => {
+  const aType = a.type === 'project' ? 0 : 1;
+  const bType = b.type === 'project' ? 0 : 1;
+  return reverse ? bType - aType : aType - bType;
+}
 
 type TreeData = (Action | Project) & { key: React.ReactNode; children: (Action | Project)[] | undefined; }
 
@@ -51,6 +67,11 @@ const populateTree = (docs: string[], docsMap: Map<string, ProcessedItem>): Tree
     .map((doc) => docsMap.get(doc))
     .filter((doc): doc is ProcessedItem => doc !== undefined)
     .filter((doc): doc is (Action | Project) => doc.type === 'project' || doc.type === 'action')
+    .sort((a, b) => {
+      if (a.type === 'project' && b.type === 'project') return b.modified - a.modified;
+      if (a.type !== b.type) return sortByProyectFirst(a, b, true);
+      return sortByIndex(a, b);
+    })
     .map((doc) => ({
       ...doc,
       key: doc._id,
@@ -62,8 +83,12 @@ type ActionsProjectsTableProps = {
 }
 
 const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
-  const [state, setState] = useState<'normal' | 'edit'>('normal');
+  const [state, setState] = useState<'normal' | 'create' | 'edit' | 'massedit'>('normal');
   const [actionProjectToProcess, setActionProjectToProcess] = useState<Action | Project | undefined>(undefined);
+  const [expandedKeys, setExpandedKeys] = useState<string[]>([]);
+  const [expandedKeysFirstLoad, setExpandedKeysFirstLoad] = useState<boolean>(true);
+  const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
+
 
   const GlobalServices = useInterpret(GlobalServicesMachine);
 
@@ -74,17 +99,30 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
   const [treeData, setTreeData] = useState<TreeData[]>();
 
   useEffect(() => {
-    console.log('why');
     const rootActionsProjectsItems = processedItems
       .filter((doc): doc is (Action | Project) => doc.type === 'project' || doc.type === 'action')
       .filter((doc) => doc.project === undefined)
       .sort((a, b) => b.modified - a.modified)
       .map((doc) => doc._id);
-    setTreeData(populateTree(rootActionsProjectsItems, processedItemsMap))
-  }, [processedItems, processedItemsMap]);
+    setTreeData(populateTree(rootActionsProjectsItems, processedItemsMap));
+
+    if (processedItems.length > 0 && expandedKeysFirstLoad) {
+      console.log(processedItems.length);
+      setExpandedKeysFirstLoad(false);
+      setExpandedKeys(rootActionsProjectsItems);
+    }
+
+  }, [processedItems, processedItemsMap, expandedKeysFirstLoad]);
+
 
   return (
     <>
+      {/* <pre>
+        {JSON.stringify(checkedKeys, null, 2)}
+      </pre> */}
+      <Button onClick={() => setState('create')}>
+        Add
+      </Button>
       <Table
         columns={columns({
           onDelete: (item) => deleteItemWithConfirm(ProcessedCRUDService, item._id),
@@ -92,9 +130,34 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
             setState('edit');
             setActionProjectToProcess(item);
           },
+          onMassActionMove: () => {
+            setState('massedit');
+          },
+          onCheck: (checked, record) => {
+            console.log(checked, record);
+            if (!checked) {
+              setCheckedKeys(checkedKeys.filter((key) => key !== record._id));
+            } else {
+              setCheckedKeys(uniqueValues([...checkedKeys, record._id]));
+            }
+          },
+          onDisabled: (item) => {
+            const [firstKey] = checkedKeys;
+            if (!firstKey) return false;
+            return (processedItemsMap.get(firstKey) as Action).project !== item.project;
+          },
+          onMassActionMoveHidden: (item) => {
+            return checkedKeys.some((key) => key === item._id);
+          },
         })}
-        onExpand={() => console.log('hey')}
-        expandedRowKeys={processedItems.map((doc) => doc._id)}
+        onExpand={(expanded, record) => {
+          if (!expanded) {
+            setExpandedKeys(expandedKeys.filter((key) => key !== record._id));
+          } else {
+            setExpandedKeys(uniqueValues([...expandedKeys, record._id]));
+          }
+        }}
+        expandedRowKeys={expandedKeys}
         // rowSelection={{ ...rowSelection, checkStrictly }}
         dataSource={treeData}
       />
@@ -104,13 +167,28 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
           setState('normal');
           setActionProjectToProcess(undefined);
         }}
-        onOk={() => {
-          if (window.confirm("Do you want to destroy this actionable and create an action/project?")) {
-            setState('normal');
-            setActionProjectToProcess(undefined);
-          }
-        }}
         actionToProcess={actionProjectToProcess}
+        processedCRUDService={ProcessedCRUDService}
+      />
+      <MassActionsModal
+        open={state === 'massedit'}
+        onCancel={() => {
+          setState('normal');
+          setActionProjectToProcess(undefined);
+        }}
+        actionsToProcess={checkedKeys}
+        processedCRUDService={ProcessedCRUDService}
+      />
+      <ActionableModal
+        open={state === 'create'}
+        onCancel={() => setState('normal')}
+        actionableToProcess={{
+          type: 'actionable',
+          _id: '',
+          content: '',
+          created: Date.now(),
+          index: '',
+        }}
         processedCRUDService={ProcessedCRUDService}
       />
     </>
