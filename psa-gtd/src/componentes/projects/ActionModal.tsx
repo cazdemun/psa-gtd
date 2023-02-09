@@ -7,20 +7,9 @@ import { useForm } from 'antd/es/form/Form';
 import { ActorRefFrom } from 'xstate';
 import { ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { SearchSelect } from '../common/Search';
-import { uniqueValues } from '../../utils';
+import { recursiveParent, uniqueValues } from '../../utils';
 
 const ACTIONABLE_MODAL_LABEL_COL = 2;
-
-const recursiveParent = (projectId: string | undefined, processedItemsMap: Map<string, ProcessedItem>): string[] => {
-  if (projectId === undefined) return [];
-
-  const project = processedItemsMap.get(projectId);
-
-  if (project === undefined) return [];
-  if (project.type !== 'project' && project.type !== 'action') return [];
-  return [projectId].concat(recursiveParent(project.project, processedItemsMap));
-
-}
 
 const projectIsAChild = (actionToProcess: Action | Project | undefined, doc: Project, processedItemsMap: Map<string, ProcessedItem>): boolean => {
   if (actionToProcess === undefined) return true;

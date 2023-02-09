@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Button, Checkbox, Space, Table } from "antd";
-import { useInterpret, useSelector } from '@xstate/react';
-import GlobalServicesMachine from '../../machines/GlobalServicesMachine';
+import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
-import { DeleteOutlined, EditFilled, EditOutlined } from '@ant-design/icons';
+import { DeleteOutlined, EditFilled, EditOutlined, SelectOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
 import { deleteItemWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
 import ActionableModal from '../process/ActionableModal';
+import GlobalServicesContext from '../context/GlobalServicesContext';
+
+import './ActionsTable.css';
 
 // interface DataType {
 //   key: React.ReactNode;
@@ -21,6 +23,7 @@ import ActionableModal from '../process/ActionableModal';
 const columns = (props: {
   onEdit: (item: Action | Project) => any,
   onDelete: (item: Action | Project) => any,
+  onDo?: (item: Action) => any,
   onMassActionMove: () => any,
   onCheck: (checked: boolean, item: Action | Project) => any,
   onDisabled: (item: Action | Project) => boolean,
@@ -46,9 +49,10 @@ const columns = (props: {
       key: 'action',
       render: (_, item: Action | Project) => (
         <Space>
-          <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />
+          {!props.onMassActionMoveHidden(item) && <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />}
           {props.onMassActionMoveHidden(item) && <Button icon={<EditFilled />} onClick={() => props.onMassActionMove()} />}
           <Button icon={<DeleteOutlined />} onClick={() => props.onDelete(item)} />
+          {(item.type === 'action' && props.onDo !== undefined) && <Button icon={<SelectOutlined />} onClick={() => (props.onDo as any)(item)} />}
         </Space>
       ),
     },
@@ -80,6 +84,7 @@ const populateTree = (docs: string[], docsMap: Map<string, ProcessedItem>): Tree
 }
 
 type ActionsProjectsTableProps = {
+  onDo?: (item: Action) => any
 }
 
 const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
@@ -90,9 +95,9 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
   const [checkedKeys, setCheckedKeys] = useState<string[]>([]);
 
 
-  const GlobalServices = useInterpret(GlobalServicesMachine);
+  const { service } = useContext(GlobalServicesContext);
 
-  const ProcessedCRUDService = useSelector(GlobalServices, ({ context }) => context.processedCRUDActor);
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItems = useSelector(ProcessedCRUDService, ({ context }) => context.docs);
   const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
 
@@ -113,7 +118,6 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
     }
 
   }, [processedItems, processedItemsMap, expandedKeysFirstLoad]);
-
 
   return (
     <>
@@ -149,6 +153,7 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
           onMassActionMoveHidden: (item) => {
             return checkedKeys.some((key) => key === item._id);
           },
+          onDo: props.onDo,
         })}
         onExpand={(expanded, record) => {
           if (!expanded) {

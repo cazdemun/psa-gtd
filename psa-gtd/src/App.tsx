@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { useInterpret, useSelector } from '@xstate/react';
 import GlobalServicesMachine from './machines/GlobalServicesMachine';
 import CollectModule from './componentes/collect';
@@ -9,6 +9,7 @@ import bucketItemsProcessesService from './machines/bucketItemsProcessesServices
 import { sortByIndex } from './utils';
 import GlobalServicesContext, { GlobalConfig } from './componentes/context/GlobalServicesContext';
 import ActionsProjectsTable from './componentes/projects/ActionsProjectsTable';
+import DoModule from './componentes/do';
 
 const paths = [
   'collect',
@@ -63,9 +64,9 @@ type HeaderProps = {
 }
 
 const Header: React.FC<HeaderProps> = (props) => {
-  const GlobalServices = useInterpret(GlobalServicesMachine);
+  const { service } = useContext(GlobalServicesContext);
 
-  const ProcessedCRUDActor = useSelector(GlobalServices, ({ context }) => context.processedCRUDActor);
+  const ProcessedCRUDActor = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItems = useSelector(ProcessedCRUDActor, ({ context }) => context.docs);
 
   const actionable = processedItems.filter((doc) => doc.type === 'actionable');
@@ -81,7 +82,7 @@ const Header: React.FC<HeaderProps> = (props) => {
 };
 
 function App() {
-  const [path, setPath] = useState<Path>('actions');
+  const [path, setPath] = useState<Path>('do');
   const [globalConfig, setGlobalConfig] = useState<Partial<GlobalConfig>>({
     actionableTableLimit: ACTIONABLE_TABLE_LIMIT,
     disableAutoActionableTable: false,
@@ -130,6 +131,7 @@ function App() {
       {path === 'collect' && (<CollectModule bucketCRUDService={BucketCRUDService} />)}
       {path === 'process' && (<ProcessModule processes={processes} />)}
       {path === 'actions' && (<ActionsProjectsTable />)}
+      {path === 'do' && (<DoModule />)}
     </GlobalServicesContext.Provider >
   );
 }

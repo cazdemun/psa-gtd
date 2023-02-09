@@ -1,7 +1,7 @@
 import { ActorRefFrom } from 'xstate';
 import { NotLazyCRUDStateMachine } from './lib/CRUDMachine';
 import { BaseDoc, NewDoc } from './lib/Repository';
-import { Action, BucketItem, Project, Reference, Support } from './models';
+import { Action, BucketItem, ProcessedItem, Project, Reference, Support } from './models';
 // import { v4 as uuidv4 } from 'uuid';
 
 export const trace = <T>(x: T): T => {
@@ -51,6 +51,18 @@ export const getLastIndexFirstLevel = <T extends { index: string }>(docs: T[]): 
   const sortedIndexes = docs.slice().map((a) => parseInt(a.index.split(".")[0])).sort((a, b) => b - a);
   const [lastIndex] = sortedIndexes;
   return lastIndex ?? 0;
+}
+
+
+export const recursiveParent = (projectId: string | undefined, processedItemsMap: Map<string, ProcessedItem>): string[] => {
+  if (projectId === undefined) return [];
+
+  const project = processedItemsMap.get(projectId);
+
+  if (project === undefined) return [];
+  if (project.type !== 'project' && project.type !== 'action') return [];
+  return [projectId].concat(recursiveParent(project.project, processedItemsMap));
+
 }
 
 // // Most references would be bookmarks, but some of them could be files like plain text or pdfs

@@ -84,16 +84,17 @@ export type Project = (BaseDoc & BaseProcessedItem) & {
 }
   & { actions: string[] }// (Action | Project)[]
 
+export type ProcessedItem =
+  | Trash | Someday
+  | Reference | Support
+  | Project | Actionable | Action
+
+
 export type FinishedActionable = {
   type: 'finished'
   item: Project | Action | BucketItem
   finished?: number
 }
-
-export type ProcessedItem =
-  | Trash | Someday
-  | Reference | Support
-  | Project | Actionable | Action
 
 // wastelandsSupportFiles: string[] path of files (I think is best to just create a reference/support file when analizing the explorer)
 // wastelandsReferenceFiles: string[] path of files
@@ -101,11 +102,12 @@ export type ProcessedItem =
 // Examples:
 // To do (3 work / 1 something else)
 export type DoCategory = BaseDoc & {
+  type: 'docategory'
   title: string
   created: number
   index: string
   description: string
-  actions: string[] // actions and projects
+  actions: string[] // actions
 }
 
 // export type ProcessedItem = (
