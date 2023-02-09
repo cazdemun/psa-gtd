@@ -22,13 +22,6 @@ const recursiveParent = (projectId: string | undefined, processedItemsMap: Map<s
 
 }
 
-const projectIsAChild = (actionToProcess: Action | Project | undefined, doc: Project, processedItemsMap: Map<string, ProcessedItem>): boolean => {
-  if (actionToProcess === undefined) return true;
-  if (actionToProcess._id === doc._id) return true;
-  const docParents = recursiveParent(doc._id, processedItemsMap);
-  return docParents.some((_id) => _id === actionToProcess._id);
-}
-
 type ActionableFormValues = (Action | Project) & { rawActions: string }
 
 const onFinish = (

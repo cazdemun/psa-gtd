@@ -1,13 +1,13 @@
 import React from 'react';
 import { useSelector } from '@xstate/react';
 import { Button, Form, Input, Modal, Row, Select } from 'antd';
-import { getLastIndexFirstLevel, uniqueValues } from '../../utils';
 import { SearchOutlined } from '@ant-design/icons';
 import { Action, ProcessedItem, Project } from '../../models';
-import { useForm, useWatch } from 'antd/es/form/Form';
+import { useForm } from 'antd/es/form/Form';
 import { ActorRefFrom } from 'xstate';
 import { ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { SearchSelect } from '../common/Search';
+import { uniqueValues } from '../../utils';
 
 const ACTIONABLE_MODAL_LABEL_COL = 2;
 
@@ -102,8 +102,6 @@ type DestroyableFormProps = {
 
 const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
   const [form] = useForm<ActionableFormValues>();
-
-  const actionType = useWatch('type', form);
 
   const processedItems = useSelector(props.processedCRUDService, ({ context }) => context.docs);
   const processedItemsMap = useSelector(props.processedCRUDService, ({ context }) => context.docsMap);
