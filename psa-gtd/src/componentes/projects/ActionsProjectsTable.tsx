@@ -5,7 +5,7 @@ import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
 import { DeleteOutlined, EditFilled, EditOutlined, SelectOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
-import { deleteActionWithConfirm, deleteItemWithConfirm, sortByIndex, uniqueValues } from '../../utils';
+import { deleteActionWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
 import ActionableModal from '../process/ActionableModal';
 import GlobalServicesContext from '../context/GlobalServicesContext';

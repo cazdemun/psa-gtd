@@ -1,4 +1,4 @@
-import React, {  } from 'react';
+import React from 'react';
 import { useSelector } from '@xstate/react';
 import { Button, Form, Modal, Row } from 'antd';
 import { getLastIndexFirstLevel, uniqueValues } from '../../utils';
@@ -53,15 +53,17 @@ const onFinish = (
         },
       }) as const);
 
+    // On mass actions the grandparent projects are not modified
     const updatedOldParents = recursiveParent(parent?._id, processedItemsMap)
       .map((_id) => processedItemsMap.get(_id))
       .filter((doc): doc is Project => doc !== undefined)
-      .map((doc, i) => ({
+      .filter((_, i) => i === 0)
+      .map((doc) => ({
         type: 'UPDATE',
         _id: doc._id,
         doc: {
           // modified: Date.now(),
-          actions: i === 0 ? doc.actions.filter((action) => !actionsToProcess.some((_id) => _id === action)) : doc.actions,
+          actions: doc.actions.filter((action) => !actionsToProcess.some((_id) => _id === action)),
         },
       }) as const);
 
