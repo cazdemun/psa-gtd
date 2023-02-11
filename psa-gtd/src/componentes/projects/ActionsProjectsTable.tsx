@@ -177,6 +177,7 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
         onCancel={() => {
           setState('normal');
           setActionProjectToProcess(undefined);
+          setCheckedKeys([]);
         }}
         actionsToProcess={checkedKeys}
         processedCRUDService={ProcessedCRUDService}

@@ -70,12 +70,18 @@ const onFinish = (
     const updatedNewParents = recursiveParent(values.project, processedItemsMap)
       .map((_id) => processedItemsMap.get(_id))
       .filter((doc): doc is Project => doc !== undefined)
-      .map((doc, i) => ({
+      .map((doc, i) => i === 0 ? ({
         type: 'UPDATE',
         _id: doc._id,
         doc: {
           modified: Date.now(),
-          actions: i === 0 ? uniqueValues([...doc.actions, ...actionsToProcess]) : doc.actions,
+          actions: uniqueValues([...doc.actions, ...actionsToProcess]),
+        },
+      }) as const : ({
+        type: 'UPDATE',
+        _id: doc._id,
+        doc: {
+          modified: Date.now(),
         },
       }) as const);
 
