@@ -5,7 +5,7 @@ import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
 import { DeleteOutlined, EditFilled, EditOutlined, SelectOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
-import { deleteItemWithConfirm, sortByIndex, uniqueValues } from '../../utils';
+import { deleteActionWithConfirm, deleteItemWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
 import ActionableModal from '../process/ActionableModal';
 import GlobalServicesContext from '../context/GlobalServicesContext';
@@ -121,15 +121,12 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
 
   return (
     <>
-      {/* <pre>
-        {JSON.stringify(checkedKeys, null, 2)}
-      </pre> */}
       <Button onClick={() => setState('create')}>
         Add
       </Button>
       <Table
         columns={columns({
-          onDelete: (item) => deleteItemWithConfirm(ProcessedCRUDService, item._id),
+          onDelete: (item) => deleteActionWithConfirm(ProcessedCRUDService, item, processedItemsMap),
           onEdit: (item) => {
             setState('edit');
             setActionProjectToProcess(item);

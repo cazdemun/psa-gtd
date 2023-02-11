@@ -1,3 +1,4 @@
+import { ProcessedCRUDStateMachine } from './machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NotLazyCRUDStateMachine } from './lib/CRUDMachine';
 import { BaseDoc, NewDoc } from './lib/Repository';
@@ -112,6 +113,50 @@ export const rollbackSupportItem = (reference: Support, index: string): NewDoc<B
 export const deleteItemWithConfirm = <T extends BaseDoc>(crudService: ActorRefFrom<NotLazyCRUDStateMachine<T>>, _id: string,) => {
   if (window.confirm('Do you really want to delete this item? There is no coming back')) {
     crudService.send({ type: 'DELETE', _id })
+  }
+};
+
+export const deleteActionWithConfirm = (
+  ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>,
+  action: Action | Project | undefined,
+  processedItemsMap: Map<string, ProcessedItem>,
+) => {
+  if (action === undefined) return;
+  if (action.type === 'project' && action.actions.length > 0) {
+    window.alert('Can\'t delete project with children');
+    return;
+  }
+
+  if (window.confirm('Do you really want to delete this item? There is no coming back')) {
+    if (action.project !== undefined) {
+      const updatedOldParents = recursiveParent(action.project, processedItemsMap)
+        .map((_id) => processedItemsMap.get(_id))
+        .filter((doc): doc is Project => doc !== undefined)
+        .map((doc, i) => ({
+          type: 'UPDATE',
+          _id: doc._id,
+          doc: {
+            // modified: Date.now(), // only when deletion comes from item done
+            actions: i === 0 ? doc.actions.filter((actionId) => actionId !== action._id) : doc.actions,
+          },
+        }) as const);
+
+      ProcessedCRUDService.send({
+        type: 'BATCH',
+        data: [
+          ...updatedOldParents,
+          {
+            type: 'DELETE',
+            _id: action._id
+          }
+        ]
+      })
+    } else {
+      ProcessedCRUDService.send({
+        type: 'DELETE',
+        _id: action._id
+      })
+    }
   }
 };
 

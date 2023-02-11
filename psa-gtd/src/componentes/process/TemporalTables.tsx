@@ -237,7 +237,7 @@ export const SomedayMaybeTable: React.FC<SomedayMaybeTableProps> = (props) => {
       title='Someday/Maybe table (max. TBD)'
       filter={(doc): doc is Someday => doc.type === 'someday'}
       onRollback={(processedItem) => {
-        if (Object.hasOwn(processedItem.item, 'type')) {
+        if (processedItem.item.type !== 'bucket') {
           const { _id, ...item } = processedItem.item as ProcessedItem;
 
           ProcessedCRUDService.send({
