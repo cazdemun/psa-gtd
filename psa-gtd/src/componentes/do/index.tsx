@@ -161,19 +161,23 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
                             )}
                           >
                             <Row style={{ width: '100%' }}>
-                              {item.title}
-                              <List
-                                dataSource={
-                                  recursiveParent(item.project, processedItemsMap)
-                                    .map((_id) => processedItemsMap.get(_id))
-                                    .filter((doc): doc is Project => doc !== undefined)
-                                }
-                                renderItem={(item) => (
-                                  <List.Item>
-                                    {`[Project] ${item.title}`}
-                                  </List.Item>
-                                )}
-                              />
+                              <Col span={24}>
+                                {item.title}
+                              </Col>
+                              <Col span={24}>
+                                <List
+                                  dataSource={
+                                    recursiveParent(item.project, processedItemsMap)
+                                      .map((_id) => processedItemsMap.get(_id))
+                                      .filter((doc): doc is Project => doc !== undefined)
+                                  }
+                                  renderItem={(item) => (
+                                    <List.Item>
+                                      {`[Project] ${item.title}`}
+                                    </List.Item>
+                                  )}
+                                />
+                              </Col>
                             </Row>
                           </List.Item>
                         )}
