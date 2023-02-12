@@ -134,12 +134,11 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
                           <List.Item
                             style={{ alignItems: 'start' }}
                             extra={(
-                              <Space>
+                              <Space direction='vertical'>
                                 <Button
                                   icon={<CheckOutlined />}
                                   onClick={() => {
                                     onFinish(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
-                                    // const FinishedItem
                                   }}
                                 />
                                 <Button

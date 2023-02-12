@@ -3,12 +3,14 @@ import { Button, Checkbox, Space, Table } from "antd";
 import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
-import { DeleteOutlined, EditFilled, EditOutlined, SelectOutlined } from '@ant-design/icons';
+import { CheckOutlined, DeleteOutlined, DownOutlined, EditFilled, EditOutlined, SelectOutlined, UpOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
 import { deleteActionWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
 import ActionableModal from '../process/ActionableModal';
 import GlobalServicesContext from '../context/GlobalServicesContext';
+import { ActorRefFrom } from 'xstate';
+import { ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 
 import './ActionsTable.css';
 
@@ -20,6 +22,63 @@ import './ActionsTable.css';
 //   children?: DataType[];
 // }
 
+const swapItem = (
+  direction: 'up' | 'down',
+  actionToSwap: Action,
+  processedItems: ProcessedItem[],
+  processedItemsMap: Map<string, ProcessedItem>,
+  ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>
+) => {
+  const parentProject = (actionToSwap.project ? processedItemsMap.get(actionToSwap.project) : undefined) as Project | undefined;
+
+  // Edge case: Technically there can be an action whose project have been deleted
+  if (actionToSwap.project && processedItemsMap.get(actionToSwap.project) === undefined) return;
+
+  // If action does not have a parent project take nieghbours from root actions
+  const actions = parentProject
+    ? parentProject.actions
+      .map((_id) => processedItemsMap.get(_id))
+      .filter((action): action is Action | Project => action !== undefined)
+      .filter((action): action is Action => action.type === 'action')
+    : processedItems
+      .filter((action): action is Action => action.type === 'action')
+      .filter((action) => action.project === undefined);
+
+  const siblingActions = actions
+    .sort((a, b) => sortByIndex(a, b));
+
+  const actionToSwapIndex = siblingActions.findIndex((siblingAction) => siblingAction._id === actionToSwap._id)
+  const actionNeighbour = (
+    actionToSwapIndex === -1
+    || (actionToSwapIndex === 0 && direction === 'up')
+    || (actionToSwapIndex === siblingActions.length - 1 && direction === 'down')
+  )
+    ? undefined
+    : siblingActions.at(direction === 'up' ? actionToSwapIndex - 1 : actionToSwapIndex + 1);
+
+  if (!actionNeighbour) return;
+
+  ProcessedCRUDService.send({
+    type: 'BATCH',
+    data: [
+      {
+        type: 'UPDATE',
+        _id: actionToSwap._id,
+        doc: {
+          index: actionNeighbour.index
+        }
+      },
+      {
+        type: 'UPDATE',
+        _id: actionNeighbour._id,
+        doc: {
+          index: actionToSwap.index
+        }
+      },
+    ],
+  })
+}
+
 const columns = (props: {
   onEdit: (item: Action | Project) => any,
   onDelete: (item: Action | Project) => any,
@@ -28,6 +87,8 @@ const columns = (props: {
   onCheck: (checked: boolean, item: Action | Project) => any,
   onDisabled: (item: Action | Project) => boolean,
   onMassActionMoveHidden: (item: Action | Project) => boolean,
+  onProjectDone?: (item: Project) => any,
+  onSwap?: (direction: 'up' | 'down', item: Action) => any,
 }): ColumnsType<Action | Project> => [
     {
       title: 'Title',
@@ -52,7 +113,10 @@ const columns = (props: {
           {!props.onMassActionMoveHidden(item) && <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />}
           {props.onMassActionMoveHidden(item) && <Button icon={<EditFilled />} onClick={() => props.onMassActionMove()} />}
           <Button icon={<DeleteOutlined />} onClick={() => props.onDelete(item)} />
-          {(item.type === 'action' && props.onDo !== undefined) && <Button icon={<SelectOutlined />} onClick={() => (props.onDo as any)(item)} />}
+          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
+          {(item.type === 'action' && props.onDo) && <Button icon={<SelectOutlined />} onClick={() => props.onDo && props.onDo(item)} />}
+          {item.type === 'action' && <Button icon={<UpOutlined />} onClick={() => props.onSwap && props.onSwap('up', item)} />}
+          {item.type === 'action' && <Button icon={<DownOutlined />} onClick={() => props.onSwap && props.onSwap('down', item)} />}
         </Space>
       ),
     },
@@ -151,6 +215,7 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
             return checkedKeys.some((key) => key === item._id);
           },
           onDo: props.onDo,
+          onSwap: (direction, item) => swapItem(direction, item, processedItems, processedItemsMap, ProcessedCRUDService),
         })}
         onExpand={(expanded, record) => {
           if (!expanded) {
