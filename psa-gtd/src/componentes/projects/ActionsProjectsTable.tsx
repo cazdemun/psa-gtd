@@ -4,8 +4,9 @@ import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
 import {
+  CheckCircleFilled,
   CheckOutlined, DeleteOutlined, DownOutlined, EditFilled,
-  EditOutlined, PlusOutlined, SelectOutlined, ToTopOutlined, UpOutlined,
+  EditOutlined, EyeOutlined, FileOutlined, PlusOutlined, SelectOutlined, ToTopOutlined, UpOutlined,
 } from '@ant-design/icons';
 import ActionModal from './ActionModal';
 import { deleteActionWithConfirm, sortByIndex, uniqueValues } from '../../utils';
@@ -83,20 +84,30 @@ const swapItem = (
 }
 
 const columns = (props: {
+  openAddModal?: (...args: any[]) => any,
+  // General
   onEdit: (item: Action | Project) => any,
   onDelete: (item: Action | Project) => any,
+  // Actions only
   onDo?: (item: Action) => any,
-  onMassActionMove: () => any,
+  onSwap?: (direction: 'up' | 'down', item: Action) => any,
   onCheck: (checked: boolean, item: Action | Project) => any,
   onDisabled: (item: Action | Project) => boolean,
   onMassActionMoveHidden: (item: Action | Project) => boolean,
+  onMassActionMove: () => any,
+  // Projects only
   onProjectDone?: (item: Project) => any,
-  onSwap?: (direction: 'up' | 'down', item: Action) => any,
-  openAddModal?: (...args: any[]) => any,
   onProjectToTop?: (item: Project) => any,
 }): ColumnsType<Action | Project> => [
     {
-      title: 'Title',
+      title: (
+        <Row align='middle'>
+          <div style={{ flex: '1' }}>
+            Title
+          </div>
+          <Button icon={<EyeOutlined />} disabled />
+        </Row >
+      ),
       dataIndex: 'title',
       key: 'title',
       render: (_, item: Action | Project) => item.type === 'project' ? `[Project] ${item.title} : ${item.index}` : (
@@ -125,11 +136,15 @@ const columns = (props: {
           {!props.onMassActionMoveHidden(item) && <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />}
           {props.onMassActionMoveHidden(item) && <Button icon={<EditFilled />} onClick={() => props.onMassActionMove()} />}
           <Button icon={<DeleteOutlined />} onClick={() => props.onDelete(item)} />
-          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
-          {(item.type === 'project' && props.onProjectToTop) && <Button icon={<ToTopOutlined />} onClick={() => props.onProjectToTop && props.onProjectToTop(item)} />}
+
           {(item.type === 'action' && props.onDo) && <Button icon={<SelectOutlined />} onClick={() => props.onDo && props.onDo(item)} />}
           {item.type === 'action' && <Button icon={<UpOutlined />} onClick={() => props.onSwap && props.onSwap('up', item)} />}
           {item.type === 'action' && <Button icon={<DownOutlined />} onClick={() => props.onSwap && props.onSwap('down', item)} />}
+
+          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
+          {(item.type === 'project') && <Button icon={<CheckCircleFilled />} disabled onClick={() => { }} />}
+          {(item.type === 'project') && <Button icon={<FileOutlined />} disabled onClick={() => { }} />}
+          {(item.type === 'project' && props.onProjectToTop) && <Button icon={<ToTopOutlined />} onClick={() => props.onProjectToTop && props.onProjectToTop(item)} />}
         </Space>
       ),
     },
