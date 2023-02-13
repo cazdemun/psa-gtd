@@ -1,10 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Button, Card, List, Row, Space, ConfigProvider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { recursiveParent } from '../../utils';
-import { Project } from '../../models';
+import { FinishedActionable, Project } from '../../models';
 import { add, format, isSameDay, isToday } from 'date-fns';
 
 type CookieJarProps = {
@@ -12,6 +12,7 @@ type CookieJarProps = {
 
 const CookieJar: React.FC<CookieJarProps> = (props) => {
   const [date, setDate] = useState<Date>(new Date());
+  const [todayFinishedItems, setTodayFinishedItems] = useState<FinishedActionable[]>([]);
 
   const { service } = useContext(GlobalServicesContext);
 
@@ -21,8 +22,17 @@ const CookieJar: React.FC<CookieJarProps> = (props) => {
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
 
+  useEffect(() => {
+    setTodayFinishedItems(
+      finishedItems
+        .slice()
+        .filter((a, b) => isSameDay(date, a.finished))
+        .sort((a, b) => b.finished - a.finished)
+    );
+  }, [finishedItems, date]);
+
   return (
-    <Card title={`Cookie jar - ${format(date, 'dd/MM/yyyy')}`}
+    <Card title={`Cookie jar (${todayFinishedItems.length}) - ${format(date, 'dd/MM/yyyy')}`}
       extra={(
         <Space>
           <Button icon={<LeftOutlined />} onClick={() => setDate(add(date, { days: -1 }))} />
@@ -31,16 +41,11 @@ const CookieJar: React.FC<CookieJarProps> = (props) => {
       )}
     >
       <List
-        dataSource={
-          finishedItems
-            .slice()
-            .filter((a, b) => isSameDay(date, a.finished))
-            .sort((a, b) => b.finished - a.finished)
-        }
+        dataSource={todayFinishedItems}
         renderItem={(item) => (
           <List.Item>
             <Row style={{ width: '100%' }}>
-              {item.item.type !== 'bucket' ? item.item.title : item.item.content}
+              {item.item.type !== 'bucket' ? `${item.item.title}` : `[Bucket Item] ${item.item.content}`}
               <ConfigProvider renderEmpty={() => <></>}>
                 {item.item.type !== 'bucket' && (
                   <List

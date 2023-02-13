@@ -4,7 +4,6 @@ import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
 import {
-  CheckCircleFilled,
   CheckOutlined, DeleteOutlined, DownOutlined, EditFilled,
   EditOutlined, EyeOutlined, FileOutlined, PlusOutlined, SelectOutlined, ToTopOutlined, UpOutlined,
 } from '@ant-design/icons';
@@ -84,6 +83,7 @@ const swapItem = (
 }
 
 const columns = (props: {
+  checkedKeys: string[],
   openAddModal?: (...args: any[]) => any,
   // General
   onEdit: (item: Action | Project) => any,
@@ -113,6 +113,7 @@ const columns = (props: {
       render: (_, item: Action | Project) => item.type === 'project' ? `[Project] ${item.title} : ${item.index}` : (
         <Space title={item.content}>
           <Checkbox
+            checked={props.checkedKeys.some((_id) => _id === item._id)}
             onChange={(checked) => props.onCheck(checked.target.checked, item)}
             disabled={props.onDisabled(item)}
           />
@@ -215,6 +216,7 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
     <>
       <Table
         columns={columns({
+          checkedKeys,
           openAddModal: () => setState('create'),
           onDelete: (item) => deleteActionWithConfirm(ProcessedCRUDService, item, processedItemsMap),
           onEdit: (item) => {
