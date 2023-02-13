@@ -108,6 +108,7 @@ export type DoCategory = BaseDoc & {
   created: number
   index: string
   description: string
+  modified: number
   actions: string[] // actions
 }
 

@@ -108,7 +108,7 @@ const onFinish = (
       modified: Date.now(),
     }
 
-    const parentProject = processedItemsMap.get(values.project ?? '') as Project | undefined;
+    const parentProject = (values.project !== undefined ? processedItemsMap.get(values.project) : undefined) as Project | undefined;
 
     if (parentProject) {
       const updatedParentProject: Partial<Project> = {

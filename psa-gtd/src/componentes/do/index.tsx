@@ -108,6 +108,7 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
                 doc: {
                   type: 'docategory',
                   created: Date.now(),
+                  modified: Date.now(),
                   description: '',
                   index: '1',
                   title: 'Choosen activities (pls max 3)',
