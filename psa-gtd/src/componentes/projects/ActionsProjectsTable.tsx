@@ -117,7 +117,7 @@ const columns = (props: {
             onChange={(checked) => props.onCheck(checked.target.checked, item)}
             disabled={props.onDisabled(item)}
           />
-          {`${item.title ?? item.content} : ${item.index}`}
+          {`${item.title} : ${item.index}`}
         </Space>
       ),
     },

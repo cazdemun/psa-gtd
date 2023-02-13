@@ -184,7 +184,7 @@ const DestroyableForm: React.FC<DestroyableFormProps> = (props) => {
             htmlType='submit'
             type='primary'
           >
-            Create
+            Update
           </Button>
         </Form.Item>
       </Row>
