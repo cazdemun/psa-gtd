@@ -141,8 +141,7 @@ const columns = (props: {
           {item.type === 'action' && <Button icon={<UpOutlined />} onClick={() => props.onSwap && props.onSwap('up', item)} />}
           {item.type === 'action' && <Button icon={<DownOutlined />} onClick={() => props.onSwap && props.onSwap('down', item)} />}
 
-          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
-          {(item.type === 'project') && <Button icon={<CheckCircleFilled />} disabled onClick={() => { }} />}
+          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} disabled onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
           {(item.type === 'project') && <Button icon={<FileOutlined />} disabled onClick={() => { }} />}
           {(item.type === 'project' && props.onProjectToTop) && <Button icon={<ToTopOutlined />} onClick={() => props.onProjectToTop && props.onProjectToTop(item)} />}
         </Space>
@@ -177,6 +176,7 @@ const populateTree = (docs: string[], docsMap: Map<string, ProcessedItem>): Tree
 
 type ActionsProjectsTableProps = {
   onDo?: (item: Action) => any
+  onProjectDone?: (item: Project) => any
 }
 
 const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
@@ -248,7 +248,8 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
             doc: {
               modified: Date.now(),
             },
-          })
+          }),
+          onProjectDone: props.onProjectDone,
         })}
         onExpand={(expanded, record) => {
           if (!expanded) {

@@ -85,6 +85,7 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
     <Row gutter={[16, 16]}>
       <Col span={7}>
         <ActionsProjectsTable
+          onProjectDone={() => { }}
           onDo={(item) => {
             const [firstCategory] = doCategories;
             if (firstCategory === undefined) return;
