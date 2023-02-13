@@ -1,9 +1,9 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button, Checkbox, Space, Table } from "antd";
+import { Button, Checkbox, Row, Space, Table } from "antd";
 import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
-import { CheckOutlined, DeleteOutlined, DownOutlined, EditFilled, EditOutlined, SelectOutlined, UpOutlined } from '@ant-design/icons';
+import { CheckOutlined, DeleteOutlined, DownOutlined, EditFilled, EditOutlined, PlusOutlined, SelectOutlined, UpOutlined } from '@ant-design/icons';
 import ActionModal from './ActionModal';
 import { deleteActionWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
@@ -34,7 +34,7 @@ const swapItem = (
   // Edge case: Technically there can be an action whose project have been deleted
   if (actionToSwap.project && processedItemsMap.get(actionToSwap.project) === undefined) return;
 
-  // If action does not have a parent project take nieghbours from root actions
+  // If action does not have a parent project take neighbours from root actions
   const actions = parentProject
     ? parentProject.actions
       .map((_id) => processedItemsMap.get(_id))
@@ -89,6 +89,7 @@ const columns = (props: {
   onMassActionMoveHidden: (item: Action | Project) => boolean,
   onProjectDone?: (item: Project) => any,
   onSwap?: (direction: 'up' | 'down', item: Action) => any,
+  openAddModal?: (...args: any[]) => any,
 }): ColumnsType<Action | Project> => [
     {
       title: 'Title',
@@ -105,9 +106,16 @@ const columns = (props: {
       ),
     },
     {
-      title: 'Actions',
-      dataIndex: 'action',
-      key: 'action',
+      title: (
+        <Row align='middle'>
+          <div style={{ flex: '1' }}>
+            Operations
+          </div>
+          <Button icon={<PlusOutlined />} onClick={() => props.openAddModal && props.openAddModal()} />
+        </Row >
+      ),
+      dataIndex: 'operation',
+      key: 'operation',
       render: (_, item: Action | Project) => (
         <Space>
           {!props.onMassActionMoveHidden(item) && <Button icon={<EditOutlined />} onClick={() => props.onEdit(item)} />}
@@ -185,11 +193,9 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
 
   return (
     <>
-      <Button onClick={() => setState('create')}>
-        Add
-      </Button>
       <Table
         columns={columns({
+          openAddModal: () => setState('create'),
           onDelete: (item) => deleteActionWithConfirm(ProcessedCRUDService, item, processedItemsMap),
           onEdit: (item) => {
             setState('edit');
