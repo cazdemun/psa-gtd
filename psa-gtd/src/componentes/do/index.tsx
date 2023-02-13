@@ -144,14 +144,12 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
                                 <Button
                                   icon={<DeleteOutlined />}
                                   onClick={() => {
-                                    const [firstCategory] = doCategories;
-                                    if (firstCategory === undefined) return;
-                                    if (!firstCategory.actions.some((_id) => _id === item._id)) return;
+                                    if (!doCategory.actions.some((_id) => _id === item._id)) return;
                                     DoCategoryCRUDService.send({
                                       type: 'UPDATE',
-                                      _id: firstCategory._id,
+                                      _id: doCategory._id,
                                       doc: {
-                                        actions: firstCategory.actions.filter((_id) => _id !== item._id),
+                                        actions: doCategory.actions.filter((_id) => _id !== item._id),
                                       }
                                     })
                                   }}
