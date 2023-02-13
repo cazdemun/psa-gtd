@@ -5,13 +5,14 @@ import { Button, Col, Divider, List, Row, Space } from 'antd';
 import BucketItemListItem from '../collect/BucketItem';
 import creatBucketItemProcessMachine from '../../machines/bucketItemProcessMachine';
 import GlobalServicesContext from '../context/GlobalServicesContext';
-import { ActionableTable, ProjectsTable, ReferenceSupportTable, SingleActionsTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
+import { ActionableTable, ReferenceSupportTable, SingleActionsTable, SomedayMaybeTable, TrashTable } from './TemporalTables';
 import { deleteItemWithConfirm, sortByIndex } from '../../utils';
 import ItemContent from '../ContentItem';
 import { DeleteOutlined, FormOutlined, SwapRightOutlined } from '@ant-design/icons';
 import BucketItemProcessListItem from './BucketItemProcessListItem';
 import { Actionable } from '../../models';
 import ActionableModal from './ActionableModal';
+import ActionsProjectsTable from '../projects/ActionsProjectsTable';
 
 type ProcessModuleActionableModeProps = {
   goToNormalMode: (...args: any[]) => any
@@ -69,7 +70,7 @@ const ProcessModuleActionableMode: React.FC<ProcessModuleActionableModeProps> = 
           />
         </Col>
         <Col span={10}>
-          <ProjectsTable />
+          <ActionsProjectsTable />
           <SingleActionsTable />
         </Col>
       </Row >
