@@ -3,7 +3,10 @@ import { Button, Checkbox, Row, Space, Table } from "antd";
 import { useSelector } from '@xstate/react';
 import { ColumnsType } from 'antd/es/table';
 import { Action, ProcessedItem, Project } from '../../models';
-import { CheckOutlined, DeleteOutlined, DownOutlined, EditFilled, EditOutlined, PlusOutlined, SelectOutlined, UpOutlined } from '@ant-design/icons';
+import {
+  CheckOutlined, DeleteOutlined, DownOutlined, EditFilled,
+  EditOutlined, PlusOutlined, SelectOutlined, ToTopOutlined, UpOutlined,
+} from '@ant-design/icons';
 import ActionModal from './ActionModal';
 import { deleteActionWithConfirm, sortByIndex, uniqueValues } from '../../utils';
 import MassActionsModal from './MassActionsModal';
@@ -90,6 +93,7 @@ const columns = (props: {
   onProjectDone?: (item: Project) => any,
   onSwap?: (direction: 'up' | 'down', item: Action) => any,
   openAddModal?: (...args: any[]) => any,
+  onProjectToTop?: (item: Project) => any,
 }): ColumnsType<Action | Project> => [
     {
       title: 'Title',
@@ -122,6 +126,7 @@ const columns = (props: {
           {props.onMassActionMoveHidden(item) && <Button icon={<EditFilled />} onClick={() => props.onMassActionMove()} />}
           <Button icon={<DeleteOutlined />} onClick={() => props.onDelete(item)} />
           {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
+          {(item.type === 'project' && props.onProjectToTop) && <Button icon={<ToTopOutlined />} onClick={() => props.onProjectToTop && props.onProjectToTop(item)} />}
           {(item.type === 'action' && props.onDo) && <Button icon={<SelectOutlined />} onClick={() => props.onDo && props.onDo(item)} />}
           {item.type === 'action' && <Button icon={<UpOutlined />} onClick={() => props.onSwap && props.onSwap('up', item)} />}
           {item.type === 'action' && <Button icon={<DownOutlined />} onClick={() => props.onSwap && props.onSwap('down', item)} />}
@@ -222,6 +227,13 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
           },
           onDo: props.onDo,
           onSwap: (direction, item) => swapItem(direction, item, processedItems, processedItemsMap, ProcessedCRUDService),
+          onProjectToTop: (project) => ProcessedCRUDService.send({
+            type: 'UPDATE',
+            _id: project._id,
+            doc: {
+              modified: Date.now(),
+            },
+          })
         })}
         onExpand={(expanded, record) => {
           if (!expanded) {
