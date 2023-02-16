@@ -123,70 +123,71 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
           <ConfigProvider renderEmpty={() => <></>}>
             {
               doCategories
-                .map((doCategory) => (
-                  <Col span={8}>
-                    <Card title={doCategory.title} bodyStyle={{ padding: '0px' }}>
-                      <List
-                        dataSource={
-                          doCategory.actions
-                            .map((_id) => processedItemsMap.get(_id))
-                            .filter((doc): doc is Action => doc !== undefined)
-                        }
-                        renderItem={(item) => (
-                          <List.Item
-                            style={{ alignItems: 'start' }}
-                            extra={(
-                              <Space direction='vertical'>
-                                <Button
-                                  icon={<CheckOutlined />}
-                                  onClick={() => {
-                                    onFinish(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
-                                  }}
-                                />
-                                <Button
-                                  icon={<DeleteOutlined />}
-                                  onClick={() => {
-                                    if (!doCategory.actions.some((_id) => _id === item._id)) return;
-                                    DoCategoryCRUDService.send({
-                                      type: 'UPDATE',
-                                      _id: doCategory._id,
-                                      doc: {
-                                        actions: doCategory.actions.filter((_id) => _id !== item._id),
-                                      }
-                                    })
-                                  }}
-                                />
-                              </Space>
-                            )}
-                          >
-                            <Row style={{ width: '100%' }}>
-                              <Col span={24}>
-                                {item.title}
-                              </Col>
-                              <Col span={24}>
-                                <List
-                                  dataSource={
-                                    recursiveParent(item.project, processedItemsMap)
-                                      .map((_id) => processedItemsMap.get(_id))
-                                      .filter((doc): doc is Project => doc !== undefined)
-                                  }
-                                  renderItem={(item) => (
-                                    <List.Item>
-                                      {`[Project] ${item.title}`}
-                                    </List.Item>
-                                  )}
-                                />
-                              </Col>
-                            </Row>
-                          </List.Item>
-                        )}
-                      />
-                      {/* <pre>
+                .map((doCategory) => {
+                  const doCategoryActions = doCategory.actions
+                    .map((_id) => processedItemsMap.get(_id))
+                    .filter((doc): doc is Action => doc !== undefined)
+                  return (
+                    <Col span={8}>
+                      <Card title={`${doCategory.title} - (${doCategoryActions.length})`} bodyStyle={{ padding: '0px' }}>
+                        <List
+                          dataSource={doCategoryActions}
+                          renderItem={(item) => (
+                            <List.Item
+                              style={{ alignItems: 'start' }}
+                              extra={(
+                                <Space direction='vertical'>
+                                  <Button
+                                    icon={<CheckOutlined />}
+                                    onClick={() => {
+                                      onFinish(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
+                                    }}
+                                  />
+                                  <Button
+                                    icon={<DeleteOutlined />}
+                                    onClick={() => {
+                                      if (!doCategory.actions.some((_id) => _id === item._id)) return;
+                                      DoCategoryCRUDService.send({
+                                        type: 'UPDATE',
+                                        _id: doCategory._id,
+                                        doc: {
+                                          actions: doCategory.actions.filter((_id) => _id !== item._id),
+                                        }
+                                      })
+                                    }}
+                                  />
+                                </Space>
+                              )}
+                            >
+                              <Row style={{ width: '100%' }}>
+                                <Col span={24}>
+                                  {item.title}
+                                </Col>
+                                <Col span={24}>
+                                  <List
+                                    dataSource={
+                                      recursiveParent(item.project, processedItemsMap)
+                                        .map((_id) => processedItemsMap.get(_id))
+                                        .filter((doc): doc is Project => doc !== undefined)
+                                    }
+                                    renderItem={(item) => (
+                                      <List.Item>
+                                        {`[Project] ${item.title}`}
+                                      </List.Item>
+                                    )}
+                                  />
+                                </Col>
+                              </Row>
+                            </List.Item>
+                          )}
+                        />
+                        {/* <pre>
                       {JSON.stringify(doCategory, null, 2)}
                     </pre> */}
-                    </Card>
-                  </Col>
-                ))
+                      </Card>
+                    </Col>
+                  )
+                })
             }
           </ConfigProvider>
           <Col span={8}>
