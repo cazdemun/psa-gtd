@@ -2,7 +2,7 @@ import { ProcessedCRUDStateMachine } from './machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NotLazyCRUDStateMachine } from './lib/CRUDMachine';
 import { BaseDoc, NewDoc } from './lib/Repository';
-import { Action, BucketItem, ProcessedItem, Project, Reference, Support } from './models';
+import { Action, BucketItem, FinishedActionable, ProcessedItem, Project, Reference, Support } from './models';
 // import { v4 as uuidv4 } from 'uuid';
 
 export const trace = <T>(x: T): T => {
@@ -59,6 +59,17 @@ export const recursiveParent = (projectId: string | undefined, processedItemsMap
   if (projectId === undefined) return [];
 
   const project = processedItemsMap.get(projectId);
+
+  if (project === undefined) return [];
+  if (project.type !== 'project' && project.type !== 'action') return [];
+  return [projectId].concat(recursiveParent(project.project, processedItemsMap));
+
+}
+
+export const completeRecursiveParent = (projectId: string | undefined, processedItemsMap: Map<string, ProcessedItem>, finishedItems: FinishedActionable[]): string[] => {
+  if (projectId === undefined) return [];
+
+  const project = processedItemsMap.get(projectId) || finishedItems.find((item) => item.item._id === projectId)?.item;
 
   if (project === undefined) return [];
   if (project.type !== 'project' && project.type !== 'action') return [];
@@ -161,6 +172,12 @@ export const deleteActionWithConfirm = (
 };
 
 export const getNextIndex = (lastIndex: number): string => (lastIndex + 1).toString();
+
+export const getTitle = (action: Action | Project): string => {
+  if (action.type === 'action') return action.title || action.content;
+  if (action.type === 'project') return `[Project] ${action.title}`;
+  return '';
+};
 
 // export const generateProjectsAndActions = (content: string): (Action | Project)[] => {
 //   const lines = content.split('\n');

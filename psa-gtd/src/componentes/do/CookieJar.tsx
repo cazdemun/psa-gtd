@@ -3,7 +3,7 @@ import { Button, Card, List, Row, Space, ConfigProvider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
-import { recursiveParent } from '../../utils';
+import { completeRecursiveParent, getTitle } from '../../utils';
 import { FinishedActionable, Project } from '../../models';
 import { add, format, isSameDay, isToday } from 'date-fns';
 
@@ -45,13 +45,13 @@ const CookieJar: React.FC<CookieJarProps> = (props) => {
         renderItem={(item) => (
           <List.Item>
             <Row style={{ width: '100%' }}>
-              {item.item.type !== 'bucket' ? `${item.item.title}` : `[Bucket Item] ${item.item.content}`}
+              {item.item.type !== 'bucket' ? `${getTitle(item.item)}` : `[Bucket Item] ${item.item.content}`}
               <ConfigProvider renderEmpty={() => <></>}>
                 {item.item.type !== 'bucket' && (
                   <List
                     dataSource={
-                      recursiveParent(item.item.project, processedItemsMap)
-                        .map((_id) => processedItemsMap.get(_id))
+                      completeRecursiveParent(item.item.project, processedItemsMap, finishedItems)
+                        .map((_id) => processedItemsMap.get(_id) || finishedItems.find((finItem) => finItem.item._id === _id)?.item)
                         .filter((doc): doc is Project => doc !== undefined)
                     }
                     renderItem={(item) => (

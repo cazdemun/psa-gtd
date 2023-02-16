@@ -11,6 +11,58 @@ import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machi
 import { ActorRefFrom } from 'xstate';
 import { NewDoc } from '../../lib/Repository';
 
+const onProjectDone = (
+  projectToFinish: Project,
+  processedItemsMap: Map<string, ProcessedItem>,
+  ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>,
+  FinishedCRUDService: ActorRefFrom<FinishedCRUDStateMachine>,
+) => {
+  const actions = projectToFinish.actions
+    .map((_id) => processedItemsMap.get(_id))
+    .filter((action): action is Project | Action => action !== undefined)
+
+  if (actions.length > 0) {
+    window.alert('You can\'t delete a project with actions');
+    return;
+  }
+
+  const newFinishedItem: NewDoc<FinishedActionable> = {
+    type: 'finished',
+    item: projectToFinish,
+    finished: Date.now(),
+  }
+
+  const updatedOldParents = recursiveParent(projectToFinish.project, processedItemsMap)
+    .map((_id) => processedItemsMap.get(_id))
+    .filter((doc): doc is Project => doc !== undefined)
+    .map((doc, i) => ({
+      type: 'UPDATE',
+      _id: doc._id,
+      doc: {
+        modified: Date.now(),
+        actions: i === 0 ? doc.actions.filter((action) => action !== projectToFinish._id) : doc.actions,
+      },
+    }) as const);
+
+  // delete project and update parents
+  ProcessedCRUDService.send({
+    type: 'BATCH',
+    data: [
+      ...updatedOldParents,
+      {
+        type: 'DELETE',
+        _id: projectToFinish._id,
+      }
+    ]
+  });
+
+  // add project to finished
+  FinishedCRUDService.send({
+    type: 'CREATE',
+    doc: newFinishedItem,
+  });
+}
+
 const onFinish = (
   actionToProcess: Action | Project | undefined,
   processedItemsMap: Map<string, ProcessedItem>,
@@ -79,13 +131,12 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
   const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
 
   const FinishedCRUDService = useSelector(service, ({ context }) => context.finishedCRUDActor);
-  // const finishedItems = useSelector(FinishedCRUDService, ({ context }) => context.docs);
 
   return (
     <Row gutter={[16, 16]}>
       <Col span={7}>
         <ActionsProjectsTable
-          onProjectDone={() => { }}
+          onProjectDone={(project) => onProjectDone(project, processedItemsMap, ProcessedCRUDService, FinishedCRUDService)}
           onDo={(item) => {
             const [firstCategory] = doCategories;
             if (firstCategory === undefined) return;
@@ -128,7 +179,7 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
                     .map((_id) => processedItemsMap.get(_id))
                     .filter((doc): doc is Action => doc !== undefined)
                   return (
-                    <Col span={8}>
+                    <Col span={8} key={doCategory._id}>
                       <Card title={`${doCategory.title} - (${doCategoryActions.length})`} bodyStyle={{ padding: '0px' }}>
                         <List
                           dataSource={doCategoryActions}

@@ -142,7 +142,7 @@ const columns = (props: {
           {item.type === 'action' && <Button icon={<UpOutlined />} onClick={() => props.onSwap && props.onSwap('up', item)} />}
           {item.type === 'action' && <Button icon={<DownOutlined />} onClick={() => props.onSwap && props.onSwap('down', item)} />}
 
-          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} disabled onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
+          {(item.type === 'project' && props.onProjectDone) && <Button icon={<CheckOutlined />} onClick={() => props.onProjectDone && props.onProjectDone(item)} />}
           {(item.type === 'project') && <Button icon={<FileOutlined />} disabled onClick={() => { }} />}
           {(item.type === 'project' && props.onProjectToTop) && <Button icon={<ToTopOutlined />} onClick={() => props.onProjectToTop && props.onProjectToTop(item)} />}
         </Space>
@@ -205,7 +205,6 @@ const ActionsProjectsTable: React.FC<ActionsProjectsTableProps> = (props) => {
     setTreeData(populateTree(rootActionsProjectsItems, processedItemsMap));
 
     if (processedItems.length > 0 && expandedKeysFirstLoad) {
-      console.log(processedItems.length);
       setExpandedKeysFirstLoad(false);
       setExpandedKeys(rootActionsProjectsItems);
     }
