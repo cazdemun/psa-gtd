@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Button, Card, List, Row, Space, ConfigProvider } from 'antd';
+import { Button, Card, List, Row, Space, ConfigProvider, Col } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { LeftOutlined, RightOutlined } from '@ant-design/icons';
@@ -32,7 +32,11 @@ const CookieJar: React.FC<CookieJarProps> = (props) => {
   }, [finishedItems, date]);
 
   return (
-    <Card title={`Cookie jar (${todayFinishedItems.length}) - ${format(date, 'dd/MM/yyyy')}`}
+    <Card
+      title={`Cookie jar (${todayFinishedItems.length}) - ${format(date, 'dd/MM/yyyy')}`}
+      bordered={false}
+      headStyle={{ paddingRight: '8px', paddingLeft: '8px' }}
+      bodyStyle={{ padding: '0px' }}
       extra={(
         <Space>
           <Button icon={<LeftOutlined />} onClick={() => setDate(add(date, { days: -1 }))} />
@@ -43,25 +47,41 @@ const CookieJar: React.FC<CookieJarProps> = (props) => {
       <List
         dataSource={todayFinishedItems}
         renderItem={(item) => (
-          <List.Item>
+          <List.Item
+            style={{
+              alignItems: 'start',
+              paddingRight: '8px',
+              paddingLeft: '8px',
+            }}
+          >
             <Row style={{ width: '100%' }}>
-              {item.item.type !== 'bucket' ? `${getTitle(item.item)}` : `[Bucket Item] ${item.item.content}`}
-              <ConfigProvider renderEmpty={() => <></>}>
-                {item.item.type !== 'bucket' && (
-                  <List
-                    dataSource={
-                      completeRecursiveParent(item.item.project, processedItemsMap, finishedItems)
-                        .map((_id) => processedItemsMap.get(_id) || finishedItems.find((finItem) => finItem.item._id === _id)?.item)
-                        .filter((doc): doc is Project => doc !== undefined)
-                    }
-                    renderItem={(item) => (
-                      <List.Item>
-                        {`[Project] ${item.title}`}
-                      </List.Item>
-                    )}
-                  />
-                )}
-              </ConfigProvider>
+              <Col span={24}>
+                {item.item.type !== 'bucket' ? `${getTitle(item.item)}` : `[Bucket Item] ${item.item.content}`}
+              </Col>
+              <Col span={24}>
+                <ConfigProvider renderEmpty={() => <div hidden></div>}>
+                  {item.item.type !== 'bucket' && (
+                    <List
+                      dataSource={
+                        completeRecursiveParent(item.item.project, processedItemsMap, finishedItems)
+                          .map((_id) => processedItemsMap.get(_id) || finishedItems.find((finItem) => finItem.item._id === _id)?.item)
+                          .filter((doc): doc is Project => doc !== undefined)
+                      }
+                      renderItem={(item) => (
+                        <List.Item
+                          style={{
+                            alignItems: 'start',
+                            paddingRight: '12px',
+                            paddingLeft: '12px',
+                          }}
+                        >
+                          {`[Project] ${item.title}`}
+                        </List.Item>
+                      )}
+                    />
+                  )}
+                </ConfigProvider>
+              </Col>
             </Row>
           </List.Item>
         )
