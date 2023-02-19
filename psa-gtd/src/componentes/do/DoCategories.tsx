@@ -126,7 +126,6 @@ const DoCategoryCard: React.FC<DoCategoryCardProps> = (props) => {
             paddingLeft: '8px',
             margin: '0px',
             whiteSpace: 'pre-wrap',
-            wordWrap: 'break-word'
           }}
         >
           {props.doCategory.description}
