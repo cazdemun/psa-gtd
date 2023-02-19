@@ -105,7 +105,7 @@ const DoCategoryModal: React.FC<DoCategoryModalProps> = (props) => {
   return (
     <Modal
       width={800}
-      title='Create action/project'
+      title='Edit category'
       open={props.open}
       onCancel={props.onCancel}
       footer={null}
@@ -113,24 +113,26 @@ const DoCategoryModal: React.FC<DoCategoryModalProps> = (props) => {
     >
       <Row>
         <Col span={24} hidden={!isFlushable}>
-          <Button
-            disabled={!isFlushable}
-            onClick={() => {
-              if (props.categoryToEdit) {
-                DoCategoryCRUDService.send({
-                  type: 'UPDATE',
-                  _id: props.categoryToEdit._id,
-                  doc: {
-                    actions: props.categoryToEdit?.actions
-                      .filter((_id) => processedItemsMap.get(_id) !== undefined)
-                  }
-                })
-                props.onCancel();
-              }
-            }}
-          >
-            Flush
-          </Button>
+          <Row justify='end' style={{ paddingBottom: '12px' }}>
+            <Button
+              disabled={!isFlushable}
+              onClick={() => {
+                if (props.categoryToEdit) {
+                  DoCategoryCRUDService.send({
+                    type: 'UPDATE',
+                    _id: props.categoryToEdit._id,
+                    doc: {
+                      actions: props.categoryToEdit?.actions
+                        .filter((_id) => processedItemsMap.get(_id) !== undefined)
+                    }
+                  })
+                  props.onCancel();
+                }
+              }}
+            >
+              Flush
+            </Button>
+          </Row>
         </Col>
         <Col span={24}>
           <DestroyableForm

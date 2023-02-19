@@ -1,15 +1,16 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import ActionsProjectsTable from '../projects/ActionsProjectsTable';
 import { Col, Row } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
-import { recursiveParent, uniqueValues } from '../../utils';
+import { recursiveParent } from '../../utils';
 import { Action, FinishedActionable, ProcessedItem, Project } from '../../models';
 import CookieJar from './CookieJar';
 import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NewDoc } from '../../lib/Repository';
 import DoCategories from './DoCategories';
+import SelectDoCategoryModal, { onAddToCategory } from './SelectDoCategoryModal';
 
 const onProjectDone = (
   projectToFinish: Project,
@@ -67,11 +68,15 @@ type DoModuleProps = {
 }
 
 const DoModule: React.FC<DoModuleProps> = (props) => {
+  const [state, setState] = useState<{ value: 'idle' | 'select'; actionToSelect: Action | undefined; }>({
+    actionToSelect: undefined,
+    value: 'idle',
+  });
 
-  const { service } = useContext(GlobalServicesContext);
+  const { service, globalConfig } = useContext(GlobalServicesContext);
 
   const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDActor);
-  const doCategories = useSelector(DoCategoryCRUDService, ({ context }) => context.docs);
+  const doCategoriesMap = useSelector(DoCategoryCRUDService, ({ context }) => context.docsMap);
 
   const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
   const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
@@ -84,16 +89,14 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
         <ActionsProjectsTable
           onProjectDone={(project) => onProjectDone(project, processedItemsMap, ProcessedCRUDService, FinishedCRUDService)}
           onDo={(item) => {
-            const [firstCategory] = doCategories;
-            if (firstCategory === undefined) return;
-            if (firstCategory.actions.some((_id) => _id === item._id)) return;
-            DoCategoryCRUDService.send({
-              type: 'UPDATE',
-              _id: firstCategory._id,
-              doc: {
-                actions: uniqueValues([...firstCategory.actions, item._id]),
-              }
-            })
+            if (globalConfig.lockedDoCategory) {
+              onAddToCategory({ category: globalConfig.lockedDoCategory }, item, doCategoriesMap, DoCategoryCRUDService);
+            } else {
+              setState({
+                actionToSelect: item,
+                value: 'select',
+              })
+            }
           }}
         />
       </Col>
@@ -114,6 +117,14 @@ const DoModule: React.FC<DoModuleProps> = (props) => {
           </Col>
         </Row>
       </Col>
+      <SelectDoCategoryModal
+        open={state.value === 'select'}
+        onCancel={() => setState({
+          actionToSelect: undefined,
+          value: 'idle',
+        })}
+        actionToAdd={state.actionToSelect}
+      />
     </Row>
   );
 };

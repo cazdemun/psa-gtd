@@ -117,7 +117,7 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
                 modified: Date.now(),
                 description: '',
                 index: '1',
-                title: 'Choosen activities (pls max 3)',
+                title: 'Choosen activities',
                 actions: [],
               }
             })}
