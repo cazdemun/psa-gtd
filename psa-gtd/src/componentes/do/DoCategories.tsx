@@ -1,10 +1,10 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useEffect, useState } from 'react';
 import { Button, Card, Col, List, Row, Space, ConfigProvider, Divider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { deleteItemWithConfirm, getLastIndexFirstLevel, getNextIndex, recursiveParent, sortByIndex } from '../../utils';
 import { Action, DoCategory, FinishedActionable, ProcessedItem, Project } from '../../models';
-import { CheckOutlined, DeleteOutlined, EditOutlined, LockFilled, PlusOutlined, UnlockOutlined } from '@ant-design/icons';
+import { CheckOutlined, DeleteOutlined, EditOutlined, EyeFilled, EyeOutlined, LockFilled, PlusOutlined, UnlockOutlined } from '@ant-design/icons';
 import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NewDoc } from '../../lib/Repository';
@@ -63,6 +63,138 @@ const onActionDone = (
   }
 }
 
+type DoCategoryCardProps = {
+  doCategory: DoCategory
+  setState: (state: { value: 'idle' | 'edit'; categoryToEdit: DoCategory | undefined; }) => any
+}
+
+const DoCategoryCard: React.FC<DoCategoryCardProps> = (props) => {
+  const [nonUndefinedActions, setNonUndefinedActions] = useState<Action[]>([]);
+  const [showDescription, setShowDescription] = useState<boolean>(false);
+
+  const { service, globalConfig, setGlobalConfig } = useContext(GlobalServicesContext);
+
+  const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDActor);
+
+  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
+  const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
+
+  const FinishedCRUDService = useSelector(service, ({ context }) => context.finishedCRUDActor);
+
+  useEffect(() => {
+    const doCategoryActions = props.doCategory.actions
+      .map((_id) => processedItemsMap.get(_id))
+      .filter((doc): doc is Action => doc !== undefined)
+    setNonUndefinedActions(doCategoryActions);
+  }, [props.doCategory, processedItemsMap]);
+
+
+  return (
+    <Card
+      title={`${props.doCategory.title} (${nonUndefinedActions.length})`}
+      headStyle={{ paddingRight: '8px', paddingLeft: '8px' }}
+      bodyStyle={{ padding: '0px' }}
+      extra={(
+        <Space>
+          <Button
+            icon={showDescription ? <EyeFilled /> : <EyeOutlined />}
+            onClick={() => setShowDescription((value) => !value)}
+          />
+          <Button
+            icon={globalConfig.lockedDoCategory === props.doCategory._id ? <LockFilled /> : <UnlockOutlined />}
+            onClick={() => globalConfig.lockedDoCategory === props.doCategory._id
+              ? setGlobalConfig({ lockedDoCategory: undefined })
+              : setGlobalConfig({ lockedDoCategory: props.doCategory._id })}
+          />
+          <Button
+            icon={<EditOutlined />}
+            onClick={() => props.setState({
+              value: 'edit',
+              categoryToEdit: props.doCategory
+            })}
+          />
+          <Button icon={<DeleteOutlined />} onClick={() => deleteItemWithConfirm(DoCategoryCRUDService, props.doCategory._id)} />
+        </Space>
+      )}
+    >
+      {(showDescription && props.doCategory.description && props.doCategory.description !== '') && (
+        <pre
+          style={{
+            alignItems: 'start',
+            paddingTop: '12px',
+            paddingRight: '8px',
+            paddingLeft: '8px',
+            margin: '0px',
+          }}
+        >
+          {props.doCategory.description}
+        </pre>
+      )}
+      <List
+        dataSource={nonUndefinedActions}
+        renderItem={(item) => (
+          <List.Item
+            style={{
+              alignItems: 'start',
+              paddingRight: '8px',
+              paddingLeft: '8px',
+            }}
+            extra={(
+              <Space direction='vertical'>
+                <Button
+                  icon={<CheckOutlined />}
+                  onClick={() => {
+                    onActionDone(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
+                  }}
+                />
+                <Button
+                  icon={<DeleteOutlined />}
+                  onClick={() => {
+                    if (!props.doCategory.actions.some((_id) => _id === item._id)) return;
+                    DoCategoryCRUDService.send({
+                      type: 'UPDATE',
+                      _id: props.doCategory._id,
+                      doc: {
+                        actions: props.doCategory.actions.filter((_id) => _id !== item._id),
+                      }
+                    })
+                  }}
+                />
+              </Space>
+            )}
+          >
+            <Row style={{ width: '100%' }}>
+              <Col span={24}>
+                {item.title}
+              </Col>
+              <Col span={24}>
+                <List
+                  dataSource={
+                    recursiveParent(item.project, processedItemsMap)
+                      .map((_id) => processedItemsMap.get(_id))
+                      .filter((doc): doc is Project => doc !== undefined)
+                  }
+                  renderItem={(item) => (
+                    <List.Item
+                      style={{
+                        alignItems: 'start',
+                        paddingRight: '12px',
+                        paddingLeft: '12px',
+                      }}
+                    >
+                      {`[Project] ${item.title}`}
+                    </List.Item>
+                  )}
+                />
+              </Col>
+            </Row>
+          </List.Item>
+        )}
+      />
+    </Card>
+  );
+};
+
 type DoCategoriesProps = {
 }
 
@@ -72,15 +204,10 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
     value: 'idle',
   });
 
-  const { service, globalConfig, setGlobalConfig } = useContext(GlobalServicesContext);
+  const { service } = useContext(GlobalServicesContext);
 
   const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDActor);
   const doCategories = useSelector(DoCategoryCRUDService, ({ context }) => context.docs);
-
-  const ProcessedCRUDService = useSelector(service, ({ context }) => context.processedCRUDActor);
-  const processedItemsMap = useSelector(ProcessedCRUDService, ({ context }) => context.docsMap);
-
-  const FinishedCRUDService = useSelector(service, ({ context }) => context.finishedCRUDActor);
 
   const lastIndex = getLastIndexFirstLevel(doCategories);
 
@@ -130,106 +257,17 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
         {
           doCategories
             .sort((a, b) => sortByIndex(a, b))
-            .map((doCategory) => {
-              const doCategoryActions = doCategory.actions
-                .map((_id) => processedItemsMap.get(_id))
-                .filter((doc): doc is Action => doc !== undefined)
-              return (
-                <Col
-                  key={doCategory._id}
-                  span={12}
-                >
-                  <Card
-                    title={`${doCategory.title} (${doCategoryActions.length})`}
-                    headStyle={{ paddingRight: '8px', paddingLeft: '8px' }}
-                    bodyStyle={{ padding: '0px' }}
-                    extra={(
-                      <Space>
-                        <Button
-                          icon={globalConfig.lockedDoCategory === doCategory._id ? <LockFilled /> : <UnlockOutlined />}
-                          onClick={() => globalConfig.lockedDoCategory === doCategory._id
-                            ? setGlobalConfig({ lockedDoCategory: undefined })
-                            : setGlobalConfig({ lockedDoCategory: doCategory._id })}
-                        />
-                        <Button
-                          icon={<EditOutlined />}
-                          onClick={() => setState({
-                            value: 'edit',
-                            categoryToEdit: doCategory
-                          })}
-                        />
-                        <Button icon={<DeleteOutlined />} onClick={() => deleteItemWithConfirm(DoCategoryCRUDService, doCategory._id)} />
-                      </Space>
-                    )}
-                  >
-                    <List
-                      dataSource={doCategoryActions}
-                      renderItem={(item) => (
-                        <List.Item
-                          style={{
-                            alignItems: 'start',
-                            paddingRight: '8px',
-                            paddingLeft: '8px',
-                          }}
-                          extra={(
-                            <Space direction='vertical'>
-                              <Button
-                                icon={<CheckOutlined />}
-                                onClick={() => {
-                                  onActionDone(item, processedItemsMap, ProcessedCRUDService, FinishedCRUDService);
-                                }}
-                              />
-                              <Button
-                                icon={<DeleteOutlined />}
-                                onClick={() => {
-                                  if (!doCategory.actions.some((_id) => _id === item._id)) return;
-                                  DoCategoryCRUDService.send({
-                                    type: 'UPDATE',
-                                    _id: doCategory._id,
-                                    doc: {
-                                      actions: doCategory.actions.filter((_id) => _id !== item._id),
-                                    }
-                                  })
-                                }}
-                              />
-                            </Space>
-                          )}
-                        >
-                          <Row style={{ width: '100%' }}>
-                            <Col span={24}>
-                              {item.title}
-                            </Col>
-                            <Col span={24}>
-                              <List
-                                dataSource={
-                                  recursiveParent(item.project, processedItemsMap)
-                                    .map((_id) => processedItemsMap.get(_id))
-                                    .filter((doc): doc is Project => doc !== undefined)
-                                }
-                                renderItem={(item) => (
-                                  <List.Item
-                                    style={{
-                                      alignItems: 'start',
-                                      paddingRight: '12px',
-                                      paddingLeft: '12px',
-                                    }}
-                                  >
-                                    {`[Project] ${item.title}`}
-                                  </List.Item>
-                                )}
-                              />
-                            </Col>
-                          </Row>
-                        </List.Item>
-                      )}
-                    />
-                    {/* <pre>
-                      {JSON.stringify(doCategory, null, 2)}
-                    </pre> */}
-                  </Card>
-                </Col>
-              )
-            })
+            .map((doCategory) => (
+              <Col
+                key={doCategory._id}
+                span={12}
+              >
+                <DoCategoryCard
+                  doCategory={doCategory}
+                  setState={setState}
+                />
+              </Col>
+            ))
         }
       </ConfigProvider>
       <DoCategoryModal
