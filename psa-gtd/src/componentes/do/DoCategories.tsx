@@ -1,13 +1,14 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Button, Card, Col, List, Row, Space, ConfigProvider, Divider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
 import { deleteItemWithConfirm, getLastIndexFirstLevel, getNextIndex, recursiveParent, sortByIndex } from '../../utils';
-import { Action, FinishedActionable, ProcessedItem, Project } from '../../models';
+import { Action, DoCategory, FinishedActionable, ProcessedItem, Project } from '../../models';
 import { CheckOutlined, DeleteOutlined, EditOutlined, LockFilled, PlusOutlined, UnlockOutlined } from '@ant-design/icons';
 import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NewDoc } from '../../lib/Repository';
+import DoCategoryModal from './DoCategoryModal';
 
 const onActionDone = (
   actionToProcess: Action | undefined,
@@ -66,6 +67,10 @@ type DoCategoriesProps = {
 }
 
 const DoCategories: React.FC<DoCategoriesProps> = (props) => {
+  const [state, setState] = useState<{ value: 'idle' | 'edit'; categoryToEdit: DoCategory | undefined; }>({
+    categoryToEdit: undefined,
+    value: 'idle',
+  });
 
   const { service, globalConfig, setGlobalConfig } = useContext(GlobalServicesContext);
 
@@ -146,7 +151,13 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
                             ? setGlobalConfig({ lockedDoCategory: undefined })
                             : setGlobalConfig({ lockedDoCategory: doCategory._id })}
                         />
-                        <Button icon={<EditOutlined />} />
+                        <Button
+                          icon={<EditOutlined />}
+                          onClick={() => setState({
+                            value: 'edit',
+                            categoryToEdit: doCategory
+                          })}
+                        />
                         <Button icon={<DeleteOutlined />} onClick={() => deleteItemWithConfirm(DoCategoryCRUDService, doCategory._id)} />
                       </Space>
                     )}
@@ -221,6 +232,14 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
             })
         }
       </ConfigProvider>
+      <DoCategoryModal
+        open={state.value === 'edit'}
+        onCancel={() => setState({
+          value: 'idle',
+          categoryToEdit: undefined,
+        })}
+        categoryToEdit={state.categoryToEdit}
+      />
     </Row >
   );
 };
