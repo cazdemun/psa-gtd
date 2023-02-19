@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = (props) => {
 
 function App() {
   const [path, setPath] = useState<Path>('do');
-  const [globalConfig, setGlobalConfig] = useState<Partial<GlobalConfig>>({
+  const [globalConfig, setGlobalConfig] = useState<GlobalConfig>({
     actionableTableLimit: ACTIONABLE_TABLE_LIMIT,
     disableAutoActionableTable: false,
   });
@@ -105,7 +105,7 @@ function App() {
     <GlobalServicesContext.Provider value={{
       service: GlobalServices,
       globalConfig: globalConfig as GlobalConfig,
-      setGlobalConfig
+      setGlobalConfig: (partialGlobalConfig) => setGlobalConfig((config) => ({ ...config, ...partialGlobalConfig })),
     }}
     >
       <Row style={{ width: '100%' }} align='bottom' >

@@ -2,15 +2,15 @@ import React, { useContext } from 'react';
 import { Button, Card, Col, List, Row, Space, ConfigProvider, Divider } from 'antd';
 import GlobalServicesContext from '../context/GlobalServicesContext';
 import { useSelector } from '@xstate/react';
-import { recursiveParent } from '../../utils';
+import { deleteItemWithConfirm, getLastIndexFirstLevel, getNextIndex, recursiveParent, sortByIndex } from '../../utils';
 import { Action, FinishedActionable, ProcessedItem, Project } from '../../models';
-import { CheckOutlined, DeleteOutlined } from '@ant-design/icons';
+import { CheckOutlined, DeleteOutlined, EditOutlined, LockFilled, PlusOutlined, UnlockOutlined } from '@ant-design/icons';
 import { FinishedCRUDStateMachine, ProcessedCRUDStateMachine } from '../../machines/GlobalServicesMachine';
 import { ActorRefFrom } from 'xstate';
 import { NewDoc } from '../../lib/Repository';
 
 const onActionDone = (
-  actionToProcess: Action | Project | undefined,
+  actionToProcess: Action | undefined,
   processedItemsMap: Map<string, ProcessedItem>,
   ProcessedCRUDService: ActorRefFrom<ProcessedCRUDStateMachine>,
   FinishedCRUDService: ActorRefFrom<FinishedCRUDStateMachine>,
@@ -67,7 +67,7 @@ type DoCategoriesProps = {
 
 const DoCategories: React.FC<DoCategoriesProps> = (props) => {
 
-  const { service } = useContext(GlobalServicesContext);
+  const { service, globalConfig, setGlobalConfig } = useContext(GlobalServicesContext);
 
   const DoCategoryCRUDService = useSelector(service, ({ context }) => context.doCategoryCRUDActor);
   const doCategories = useSelector(DoCategoryCRUDService, ({ context }) => context.docs);
@@ -77,10 +77,31 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
 
   const FinishedCRUDService = useSelector(service, ({ context }) => context.finishedCRUDActor);
 
+  const lastIndex = getLastIndexFirstLevel(doCategories);
+
   return (
     <Row>
       <Col span={24} >
-        <Divider orientation='left'>Categories</Divider>
+        <Divider orientation='left'>
+          <Space>
+            Categories
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => DoCategoryCRUDService.send({
+                type: 'CREATE',
+                doc: {
+                  type: 'docategory',
+                  created: Date.now(),
+                  modified: Date.now(),
+                  description: '',
+                  index: getNextIndex(lastIndex),
+                  title: 'New Category',
+                  actions: [],
+                }
+              })}
+            />
+          </Space>
+        </Divider>
         {doCategories.length < 1 && (
           <Button
             onClick={() => DoCategoryCRUDService.send({
@@ -103,6 +124,7 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
       <ConfigProvider renderEmpty={() => <></>}>
         {
           doCategories
+            .sort((a, b) => sortByIndex(a, b))
             .map((doCategory) => {
               const doCategoryActions = doCategory.actions
                 .map((_id) => processedItemsMap.get(_id))
@@ -116,6 +138,18 @@ const DoCategories: React.FC<DoCategoriesProps> = (props) => {
                     title={`${doCategory.title} (${doCategoryActions.length})`}
                     headStyle={{ paddingRight: '8px', paddingLeft: '8px' }}
                     bodyStyle={{ padding: '0px' }}
+                    extra={(
+                      <Space>
+                        <Button
+                          icon={globalConfig.lockedDoCategory === doCategory._id ? <LockFilled /> : <UnlockOutlined />}
+                          onClick={() => globalConfig.lockedDoCategory === doCategory._id
+                            ? setGlobalConfig({ lockedDoCategory: undefined })
+                            : setGlobalConfig({ lockedDoCategory: doCategory._id })}
+                        />
+                        <Button icon={<EditOutlined />} />
+                        <Button icon={<DeleteOutlined />} onClick={() => deleteItemWithConfirm(DoCategoryCRUDService, doCategory._id)} />
+                      </Space>
+                    )}
                   >
                     <List
                       dataSource={doCategoryActions}
