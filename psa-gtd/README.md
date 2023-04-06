@@ -1,5 +1,8 @@
 # Usage
 
+- [ ] incomplete task
+- [x] completed task
+
     npm install
 
 Change titles as desired
